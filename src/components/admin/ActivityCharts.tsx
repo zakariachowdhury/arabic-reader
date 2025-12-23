@@ -161,7 +161,7 @@ export function TestScoresChart({ data }: TestScoresChartProps) {
                 />
                 <YAxis domain={[0, 100]} />
                 <Tooltip
-                    formatter={(value: number) => `${value.toFixed(1)}%`}
+                    formatter={(value: number | undefined) => value !== undefined ? `${value.toFixed(1)}%` : ''}
                     labelFormatter={(value) => {
                         const date = new Date(value);
                         return date.toLocaleDateString("en-US", {
