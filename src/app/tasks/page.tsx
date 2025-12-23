@@ -2,17 +2,16 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { Dashboard } from "@/components/Dashboard";
-import { LandingPage } from "@/components/LandingPage";
 
-export default async function Home() {
+export default async function TasksPage() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
-  if (session) {
-    // Redirect to books page as default after login
-    redirect("/books");
+  if (!session) {
+    redirect("/login");
   }
 
-  return <LandingPage />;
+  return <Dashboard user={session.user} />;
 }
+

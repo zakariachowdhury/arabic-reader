@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/db";
-import { todos, verification, user, groups, settings } from "@/db/schema";
-import { eq, asc, and } from "drizzle-orm";
+import { todos, verification, user, groups, settings, books, units, lessons, vocabularyWords, userProgress } from "@/db/schema";
+import { eq, asc, and, desc, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -1166,5 +1166,238 @@ export async function isAIAvailableForUser(): Promise<boolean> {
     } catch (error) {
         console.error("Failed to check AI availability for user:", error);
         return false;
+    }
+}
+
+// Book and Content Management Actions (User-facing)
+export async function getBooks() {
+    const session = await getSession();
+    if (!session) return [];
+
+    try {
+        return await db
+            .select()
+            .from(books)
+            .orderBy(asc(books.title));
+    } catch (error) {
+        console.error("Failed to fetch books:", error);
+        return [];
+    }
+}
+
+export async function getBookById(id: number) {
+    const session = await getSession();
+    if (!session) return null;
+
+    try {
+        const [book] = await db
+            .select()
+            .from(books)
+            .where(eq(books.id, id))
+            .limit(1);
+        return book || null;
+    } catch (error) {
+        console.error("Failed to fetch book:", error);
+        return null;
+    }
+}
+
+export async function getUnitsByBook(bookId: number) {
+    const session = await getSession();
+    if (!session) return [];
+
+    try {
+        return await db
+            .select()
+            .from(units)
+            .where(eq(units.bookId, bookId))
+            .orderBy(asc(units.order), asc(units.id));
+    } catch (error) {
+        console.error("Failed to fetch units:", error);
+        return [];
+    }
+}
+
+export async function getUnitById(id: number) {
+    const session = await getSession();
+    if (!session) return null;
+
+    try {
+        const [unit] = await db
+            .select()
+            .from(units)
+            .where(eq(units.id, id))
+            .limit(1);
+        return unit || null;
+    } catch (error) {
+        console.error("Failed to fetch unit:", error);
+        return null;
+    }
+}
+
+export async function getLessonsByUnit(unitId: number) {
+    const session = await getSession();
+    if (!session) return [];
+
+    try {
+        return await db
+            .select()
+            .from(lessons)
+            .where(eq(lessons.unitId, unitId))
+            .orderBy(asc(lessons.order), asc(lessons.id));
+    } catch (error) {
+        console.error("Failed to fetch lessons:", error);
+        return [];
+    }
+}
+
+export async function getLessonById(id: number) {
+    const session = await getSession();
+    if (!session) return null;
+
+    try {
+        const [lesson] = await db
+            .select()
+            .from(lessons)
+            .where(eq(lessons.id, id))
+            .limit(1);
+        return lesson || null;
+    } catch (error) {
+        console.error("Failed to fetch lesson:", error);
+        return null;
+    }
+}
+
+export async function getVocabularyWordsByLesson(lessonId: number) {
+    const session = await getSession();
+    if (!session) return [];
+
+    try {
+        return await db
+            .select()
+            .from(vocabularyWords)
+            .where(eq(vocabularyWords.lessonId, lessonId))
+            .orderBy(asc(vocabularyWords.order), asc(vocabularyWords.id));
+    } catch (error) {
+        console.error("Failed to fetch vocabulary words:", error);
+        return [];
+    }
+}
+
+// Progress Tracking Actions
+export async function getUserProgress(lessonId: number) {
+    const session = await getSession();
+    if (!session) return {};
+
+    try {
+        // Get all words for this lesson
+        const words = await getVocabularyWordsByLesson(lessonId);
+        const wordIds = words.map(w => w.id);
+
+        if (wordIds.length === 0) return {};
+
+        // Get progress for all words
+        const progress = await db
+            .select()
+            .from(userProgress)
+            .where(
+                and(
+                    eq(userProgress.userId, session.user.id),
+                    inArray(userProgress.wordId, wordIds)
+                )
+            );
+
+        // Create a map of wordId -> progress
+        const progressMap: Record<number, typeof userProgress.$inferSelect> = {};
+        progress.forEach(p => {
+            progressMap[p.wordId] = p;
+        });
+
+        return progressMap;
+    } catch (error) {
+        console.error("Failed to fetch user progress:", error);
+        return {};
+    }
+}
+
+export async function updateUserProgress(wordId: number, data: { seen?: boolean; correct?: boolean; incorrect?: boolean }) {
+    const session = await getSession();
+    if (!session) throw new Error("Unauthorized");
+
+    try {
+        // Check if progress exists
+        const [existing] = await db
+            .select()
+            .from(userProgress)
+            .where(
+                and(
+                    eq(userProgress.userId, session.user.id),
+                    eq(userProgress.wordId, wordId)
+                )
+            )
+            .limit(1);
+
+        const updateData: {
+            seen?: boolean;
+            correctCount?: number;
+            incorrectCount?: number;
+            lastReviewedAt?: Date;
+            updatedAt: Date;
+        } = {
+            updatedAt: new Date(),
+        };
+
+        if (data.seen !== undefined) {
+            updateData.seen = data.seen;
+        }
+
+        if (existing) {
+            // Update existing progress
+            if (data.correct) {
+                updateData.correctCount = (existing.correctCount || 0) + 1;
+            }
+            if (data.incorrect) {
+                updateData.incorrectCount = (existing.incorrectCount || 0) + 1;
+            }
+            if (data.seen !== undefined || data.correct || data.incorrect) {
+                updateData.lastReviewedAt = new Date();
+            }
+
+            await db
+                .update(userProgress)
+                .set(updateData)
+                .where(
+                    and(
+                        eq(userProgress.userId, session.user.id),
+                        eq(userProgress.wordId, wordId)
+                    )
+                );
+        } else {
+            // Create new progress
+            const newProgress: typeof userProgress.$inferInsert = {
+                userId: session.user.id,
+                wordId,
+                seen: data.seen ?? false,
+                correctCount: data.correct ? 1 : 0,
+                incorrectCount: data.incorrect ? 1 : 0,
+                lastReviewedAt: (data.seen !== undefined || data.correct || data.incorrect) ? new Date() : null,
+            };
+
+            await db.insert(userProgress).values(newProgress);
+        }
+
+        // Find lessonId from wordId to revalidate
+        const [word] = await db
+            .select({ lessonId: vocabularyWords.lessonId })
+            .from(vocabularyWords)
+            .where(eq(vocabularyWords.id, wordId))
+            .limit(1);
+        
+        if (word) {
+            revalidatePath(`/lessons/${word.lessonId}/vocabulary`);
+        }
+    } catch (error) {
+        console.error("Failed to update user progress:", error);
+        throw error;
     }
 }

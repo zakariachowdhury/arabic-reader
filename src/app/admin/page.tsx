@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin";
 import { getAdminStats, getGlobalAIEnabled } from "./actions";
 import Link from "next/link";
-import { Users, CheckSquare, UserCheck, BarChart3, Palette } from "lucide-react";
+import { Users, CheckSquare, UserCheck, BarChart3, Palette, BookOpen } from "lucide-react";
 import { GlobalAIToggle } from "@/components/admin/GlobalAIToggle";
 
 export default async function AdminPage() {
@@ -84,7 +84,7 @@ export default async function AdminPage() {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <Link
                         href="/admin/users"
                         className="bg-white rounded-2xl shadow-lg border border-slate-100 p-8 hover:shadow-xl transition-all hover:border-blue-200 group"
@@ -136,6 +136,24 @@ export default async function AdminPage() {
                         </div>
                         <p className="text-sm text-slate-400 mt-4">
                             View, edit, and delete groups from any user.
+                        </p>
+                    </Link>
+
+                    <Link
+                        href="/admin/books"
+                        className="bg-white rounded-2xl shadow-lg border border-slate-100 p-8 hover:shadow-xl transition-all hover:border-indigo-200 group"
+                    >
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="p-4 bg-indigo-100 rounded-xl group-hover:bg-indigo-200 transition-colors">
+                                <BookOpen className="w-8 h-8 text-indigo-600" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-bold text-slate-900">Book Management</h2>
+                                <p className="text-slate-500">Manage books, units, lessons, and vocabulary</p>
+                            </div>
+                        </div>
+                        <p className="text-sm text-slate-400 mt-4">
+                            Create and manage the Arabic Reader book series content.
                         </p>
                     </Link>
                 </div>

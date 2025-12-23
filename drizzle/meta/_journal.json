@@ -8,6 +8,27 @@
       "when": 1766437503374,
       "tag": "0000_flimsy_silver_centurion",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1734940000000,
+      "tag": "0001_add_groups",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1734940100000,
+      "tag": "0002_add_ai_enabled",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1734940200000,
+      "tag": "0003_add_books_system",
+      "breakpoints": true
     }
   ]
 }

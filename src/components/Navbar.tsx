@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, Github, Settings, Shield } from "lucide-react";
+import { CheckCircle2, Github, Settings, Shield, BookOpen, CheckSquare } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { SignOutButton } from "./SignOutButton";
@@ -32,27 +32,67 @@ export async function Navbar() {
                 </div>
                 <div className="flex items-center gap-4">
                     {session ? (
-                        <div className="flex items-center gap-4">
-                            <span className="hidden sm:inline text-sm text-slate-500 font-light">
-                                <span className="text-slate-900 font-medium">{session.user.name}</span>
-                            </span>
-                            {admin && (
+                        <div className="flex items-center gap-6">
+                            {/* Main Navigation */}
+                            <div className="flex items-center gap-2">
                                 <Link
-                                    href="/admin"
-                                    className="p-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-xl transition-all"
-                                    title="Admin Dashboard"
+                                    href="/books"
+                                    className="p-2.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-all"
+                                    title="Arabic Reader"
                                 >
-                                    <Shield size={20} />
+                                    <BookOpen size={20} />
                                 </Link>
-                            )}
-                            <Link
-                                href="/settings"
-                                className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all"
-                                title="Settings"
-                            >
-                                <Settings size={20} />
-                            </Link>
-                            <SignOutButton />
+                                <Link
+                                    href="/tasks"
+                                    className="p-2.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition-all"
+                                    title="Tasks"
+                                >
+                                    <CheckSquare size={20} />
+                                </Link>
+                            </div>
+
+                            {/* Divider */}
+                            <div className="h-8 w-px bg-slate-200" />
+
+                            {/* User Actions */}
+                            <div className="flex items-center gap-3">
+                                {admin && (
+                                    <>
+                                        <Link
+                                            href="/admin"
+                                            className="p-2.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-xl transition-all"
+                                            title="Admin Dashboard"
+                                        >
+                                            <Shield size={20} />
+                                        </Link>
+                                        <Link
+                                            href="/settings?tab=admin"
+                                            className="p-2.5 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all"
+                                            title="Admin Settings"
+                                        >
+                                            <Settings size={20} />
+                                        </Link>
+                                    </>
+                                )}
+                                <Link
+                                    href="/settings"
+                                    className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 rounded-lg transition-all group"
+                                    title="View Profile"
+                                >
+                                    <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm group-hover:shadow-md transition-shadow">
+                                        {session.user.name
+                                            ?.split(" ")
+                                            .map((n) => n[0])
+                                            .join("")
+                                            .toUpperCase()
+                                            .slice(0, 2) || "U"}
+                                    </div>
+                                    <span className="text-sm text-slate-700 font-medium group-hover:text-slate-900">
+                                        {session.user.name}
+                                    </span>
+                                </Link>
+                                <SignOutButton />
+                            </div>
                         </div>
                     ) : (
                         <>

@@ -1,4 +1,5 @@
 import { pgTable, serial, text, boolean, timestamp, integer } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
 export const user = pgTable("user", {
     id: text("id").primaryKey(),
@@ -86,6 +87,64 @@ export const settings = pgTable("settings", {
         .references(() => user.id),
 });
 
+export const books = pgTable("books", {
+    id: serial("id").primaryKey(),
+    title: text("title").notNull(),
+    description: text("description"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const units = pgTable("units", {
+    id: serial("id").primaryKey(),
+    bookId: integer("book_id")
+        .notNull()
+        .references(() => books.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    order: integer("order").default(0).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const lessons = pgTable("lessons", {
+    id: serial("id").primaryKey(),
+    unitId: integer("unit_id")
+        .notNull()
+        .references(() => units.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    type: text("type").notNull(), // e.g., "vocabulary", "reading", "grammar"
+    order: integer("order").default(0).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const vocabularyWords = pgTable("vocabulary_words", {
+    id: serial("id").primaryKey(),
+    lessonId: integer("lesson_id")
+        .notNull()
+        .references(() => lessons.id, { onDelete: "cascade" }),
+    arabic: text("arabic").notNull(),
+    english: text("english").notNull(),
+    order: integer("order").default(0).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const userProgress = pgTable("user_progress", {
+    id: serial("id").primaryKey(),
+    userId: text("user_id")
+        .notNull()
+        .references(() => user.id, { onDelete: "cascade" }),
+    wordId: integer("word_id")
+        .notNull()
+        .references(() => vocabularyWords.id, { onDelete: "cascade" }),
+    seen: boolean("seen").default(false).notNull(),
+    correctCount: integer("correct_count").default(0).notNull(),
+    incorrectCount: integer("incorrect_count").default(0).notNull(),
+    lastReviewedAt: timestamp("last_reviewed_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type Todo = typeof todos.$inferSelect;
 export type NewTodo = typeof todos.$inferInsert;
 export type Group = typeof groups.$inferSelect;
@@ -95,3 +154,13 @@ export type Session = typeof session.$inferSelect;
 export type Account = typeof account.$inferSelect;
 export type Verification = typeof verification.$inferSelect;
 export type Setting = typeof settings.$inferSelect;
+export type Book = typeof books.$inferSelect;
+export type NewBook = typeof books.$inferInsert;
+export type Unit = typeof units.$inferSelect;
+export type NewUnit = typeof units.$inferInsert;
+export type Lesson = typeof lessons.$inferSelect;
+export type NewLesson = typeof lessons.$inferInsert;
+export type VocabularyWord = typeof vocabularyWords.$inferSelect;
+export type NewVocabularyWord = typeof vocabularyWords.$inferInsert;
+export type UserProgress = typeof userProgress.$inferSelect;
+export type NewUserProgress = typeof userProgress.$inferInsert;

@@ -31,7 +31,7 @@ export default function SignUpPage() {
             email,
             password,
             name,
-            callbackURL: "/",
+            callbackURL: "/books",
         });
 
         if (error) {
@@ -40,7 +40,7 @@ export default function SignUpPage() {
         } else {
             setSuccess(true);
             setTimeout(() => {
-                router.push("/");
+                router.push("/books");
                 router.refresh();
             }, 1000);
         }

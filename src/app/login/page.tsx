@@ -22,12 +22,12 @@ export default function LoginPage() {
             if (!session.user.emailVerified) {
                 setShowVerificationWarning(true);
                 setTimeout(() => {
-                    router.push("/");
+                    router.push("/books");
                     router.refresh();
                 }, 3000);
             } else {
                 setTimeout(() => {
-                    router.push("/");
+                    router.push("/books");
                     router.refresh();
                 }, 1000);
             }
@@ -43,7 +43,7 @@ export default function LoginPage() {
         const { error } = await signIn.email({
             email,
             password,
-            callbackURL: "/",
+            callbackURL: "/books",
         });
 
         if (error) {

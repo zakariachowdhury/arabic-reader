@@ -25,7 +25,7 @@ A premium, high-performance Todo application built with cutting-edge technologie
 ### 1. Clone the repository
 ```bash
 git clone <your-repo-url>
-cd nextjs-todo
+cd arabic-reader
 ```
 
 ### 2. Install dependencies
@@ -43,7 +43,7 @@ npm install
    RESEND_API_KEY=your_resend_api_key
    NEXT_PUBLIC_APP_NAME=TaskFlow
    ```
-   *Note: `BETTER_AUTH_URL` is automatically inferred from your environment in development (localhost:3000). For production, set it in Vercel environment variables.*
+   *Note: You can generate secret with this command `openssl rand -base64 32`. `BETTER_AUTH_URL` is automatically inferred from your environment in development (localhost:3000). For production, set it in Vercel environment variables.*
 
 ### 4. Run Migrations
 Generate and run migrations to set up your database schema:

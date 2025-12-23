@@ -43,7 +43,7 @@ function VerifyEmailContent() {
                 setStatus("success");
                 setMessage("Your email has been verified successfully! You can now access all features.");
                 setTimeout(() => {
-                    router.push("/");
+                    router.push("/books");
                     router.refresh();
                 }, 2000);
             } else {
