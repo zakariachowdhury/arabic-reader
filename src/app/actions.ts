@@ -1185,6 +1185,63 @@ export async function getBooks() {
     }
 }
 
+// Public function to get books with statistics (no auth required)
+export async function getBooksWithStats() {
+    try {
+        const allBooks = await db
+            .select()
+            .from(books)
+            .orderBy(asc(books.title));
+
+        const booksWithStats = await Promise.all(
+            allBooks.map(async (book) => {
+                // Count units
+                const bookUnits = await db
+                    .select({ id: units.id })
+                    .from(units)
+                    .where(eq(units.bookId, book.id));
+                
+                const unitIds = bookUnits.map(u => u.id);
+                
+                // Count lessons
+                let lessonCount = 0;
+                if (unitIds.length > 0) {
+                    const lessonsResult = await db
+                        .select({ count: sql<number>`COUNT(*)`.as('count') })
+                        .from(lessons)
+                        .where(inArray(lessons.unitId, unitIds));
+                    lessonCount = Number(lessonsResult[0]?.count || 0);
+                }
+                
+                // Count vocabulary words
+                let vocabularyCount = 0;
+                if (unitIds.length > 0) {
+                    const vocabularyResult = await db
+                        .select({ count: sql<number>`COUNT(*)`.as('count') })
+                        .from(vocabularyWords)
+                        .innerJoin(lessons, eq(vocabularyWords.lessonId, lessons.id))
+                        .where(inArray(lessons.unitId, unitIds));
+                    vocabularyCount = Number(vocabularyResult[0]?.count || 0);
+                }
+
+                return {
+                    ...book,
+                    stats: {
+                        units: bookUnits.length,
+                        lessons: lessonCount,
+                        vocabularyWords: vocabularyCount,
+                    },
+                };
+            })
+        );
+
+        return booksWithStats;
+    } catch (error) {
+        console.error("Failed to fetch books with stats:", error);
+        return [];
+    }
+}
+
 export async function getBookById(id: number) {
     const session = await getSession();
     if (!session) return null;
