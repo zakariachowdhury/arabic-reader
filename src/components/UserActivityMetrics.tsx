@@ -15,6 +15,7 @@ import {
     AccuracyChart,
     TestScoresChart,
 } from "@/components/admin/ActivityCharts";
+import { TestResult } from "@/app/admin/actions";
 import { Flame, Target, TrendingUp, BookOpen } from "lucide-react";
 
 type BookActivityData = {
@@ -41,7 +42,7 @@ export function UserActivityMetrics() {
         totalCorrect: number;
         totalIncorrect: number;
     } | null>(null);
-    const [testResults, setTestResults] = useState<Array<{ date: string; score: number; totalWords: number; correctWords: number }>>([]);
+    const [testResults, setTestResults] = useState<TestResult[]>([]);
     const [summary, setSummary] = useState<{
         totalWordsReviewed: number;
         totalPracticeSessions: number;

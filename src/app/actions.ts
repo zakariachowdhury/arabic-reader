@@ -1816,7 +1816,7 @@ export async function getUserPracticeMetrics(
 export async function getUserTestResults(
     startDate?: Date,
     endDate?: Date
-): Promise<Array<{ date: string; score: number; totalWords: number; correctWords: number }>> {
+): Promise<Array<{ date: string; score: number; totalWords: number; correctWords: number; lessonId: number | null; lessonTitle: string | null }>> {
     const session = await getSession();
     if (!session) return [];
 
@@ -1862,7 +1862,7 @@ export async function getUserTestResults(
             session.incorrect += item.incorrectCount;
         });
 
-        const testResults: Array<{ date: string; score: number; totalWords: number; correctWords: number }> = [];
+        const testResults: Array<{ date: string; score: number; totalWords: number; correctWords: number; lessonId: number | null; lessonTitle: string | null }> = [];
 
         testSessions.forEach(session => {
             if (session.wordIds.size >= 5) {
@@ -1872,6 +1872,8 @@ export async function getUserTestResults(
                     score: total > 0 ? (session.correct / total) * 100 : 0,
                     totalWords: session.wordIds.size,
                     correctWords: session.correct,
+                    lessonId: null,
+                    lessonTitle: null,
                 });
             }
         });
