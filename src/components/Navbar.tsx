@@ -22,7 +22,7 @@ export async function Navbar() {
                         <span className="text-xl font-bold tracking-tight text-slate-900">{process.env.NEXT_PUBLIC_APP_NAME || "TaskFlow"}</span>
                     </Link>
                     <a
-                        href="https://github.com/zakariachowdhury/arabic-reader"
+                        href="https://github.com/zakariachowdhury/arabicreader"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="hidden sm:flex items-center gap-2 text-sm text-slate-400 hover:text-slate-900 transition-colors"

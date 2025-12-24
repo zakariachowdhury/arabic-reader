@@ -56,7 +56,7 @@ A modern, intelligent Arabic learning application that combines structured conte
 ### 1. Clone the repository
 ```bash
 git clone <your-repo-url>
-cd arabic-reader
+cd arabicreader
 ```
 
 ### 2. Install dependencies
