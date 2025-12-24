@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { adminUpdateTodo, adminDeleteTodo } from "@/app/admin/actions";
 import { GroupBadge } from "@/components/GroupSelector";
 import { Edit2, Trash2, Save, X, CheckCircle2, Circle } from "lucide-react";
+import { DeleteConfirmation } from "./DeleteConfirmation";
 
 type TodoWithUser = {
     id: number;
@@ -27,6 +28,7 @@ export function TodoManagement({ initialTodos }: { initialTodos: TodoWithUser[] 
     const [todos, setTodos] = useState(initialTodos);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editContent, setEditContent] = useState<string>("");
+    const [deletingId, setDeletingId] = useState<number | null>(null);
     const [isPending, startTransition] = useTransition();
 
     const handleEdit = (todo: TodoWithUser) => {
@@ -78,18 +80,24 @@ export function TodoManagement({ initialTodos }: { initialTodos: TodoWithUser[] 
         });
     };
 
-    const handleDelete = async (todoId: number) => {
-        if (!confirm("Are you sure you want to delete this todo?")) {
-            return;
-        }
+    const handleDeleteClick = (todoId: number) => {
+        setDeletingId(todoId);
+    };
 
+    const handleCancelDelete = () => {
+        setDeletingId(null);
+    };
+
+    const handleDelete = async (todoId: number) => {
         startTransition(async () => {
             try {
                 await adminDeleteTodo(todoId);
                 setTodos(todos.filter(t => t.id !== todoId));
+                setDeletingId(null);
             } catch (error) {
                 console.error("Failed to delete todo:", error);
                 alert("Failed to delete todo. Please try again.");
+                setDeletingId(null);
             }
         });
     };
@@ -182,21 +190,31 @@ export function TodoManagement({ initialTodos }: { initialTodos: TodoWithUser[] 
                                         </div>
                                     ) : (
                                         <div className="flex items-center justify-end gap-2">
-                                            <button
-                                                onClick={() => handleEdit(todo)}
-                                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                title="Edit"
-                                            >
-                                                <Edit2 className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(todo.id)}
-                                                disabled={isPending}
-                                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                                                title="Delete"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
+                                            <DeleteConfirmation
+                                                isDeleting={deletingId === todo.id}
+                                                onConfirm={() => handleDelete(todo.id)}
+                                                onCancel={handleCancelDelete}
+                                                isPending={isPending}
+                                            />
+                                            {deletingId !== todo.id && (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleEdit(todo)}
+                                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        title="Edit"
+                                                    >
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteClick(todo.id)}
+                                                        disabled={isPending}
+                                                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     )}
                                 </td>

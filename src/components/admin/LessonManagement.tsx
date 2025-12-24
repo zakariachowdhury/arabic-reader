@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Lesson } from "@/db/schema";
 import { createLesson, updateLesson, deleteLesson, updateLessonOrder } from "@/app/admin/actions";
 import { Edit2, Trash2, Save, X, Plus, BookOpen, GripVertical } from "lucide-react";
+import { DeleteConfirmation } from "./DeleteConfirmation";
 import Link from "next/link";
 import {
     DndContext,
@@ -23,15 +24,18 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-function SortableLessonRow({ lesson, editingId, editData, isPending, onEdit, onCancel, onSave, onDelete, setEditData }: {
+function SortableLessonRow({ lesson, editingId, editData, isPending, deletingId, onEdit, onCancel, onSave, onDeleteClick, onDeleteConfirm, onCancelDelete, setEditData }: {
     lesson: Lesson;
     editingId: number | null;
     editData: { title: string; type: string; order: number } | null;
     isPending: boolean;
+    deletingId: number | null;
     onEdit: (lesson: Lesson) => void;
     onCancel: () => void;
     onSave: (lessonId: number) => void;
-    onDelete: (lessonId: number) => void;
+    onDeleteClick: (lessonId: number) => void;
+    onDeleteConfirm: (lessonId: number) => void;
+    onCancelDelete: () => void;
     setEditData: (data: { title: string; type: string; order: number } | null) => void;
 }) {
     const {
@@ -131,30 +135,40 @@ function SortableLessonRow({ lesson, editingId, editData, isPending, onEdit, onC
                     </div>
                 ) : (
                     <div className="flex items-center justify-end gap-2">
-                        {lesson.type === "vocabulary" && (
-                            <Link
-                                href={`/admin/lessons/${lesson.id}/vocabulary`}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                title="Manage Vocabulary"
-                            >
-                                <BookOpen className="w-4 h-4" />
-                            </Link>
+                        <DeleteConfirmation
+                            isDeleting={deletingId === lesson.id}
+                            onConfirm={() => onDeleteConfirm(lesson.id)}
+                            onCancel={onCancelDelete}
+                            isPending={isPending}
+                        />
+                        {deletingId !== lesson.id && (
+                            <>
+                                {lesson.type === "vocabulary" && (
+                                    <Link
+                                        href={`/admin/lessons/${lesson.id}/vocabulary`}
+                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                        title="Manage Vocabulary"
+                                    >
+                                        <BookOpen className="w-4 h-4" />
+                                    </Link>
+                                )}
+                                <button
+                                    onClick={() => onEdit(lesson)}
+                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    title="Edit"
+                                >
+                                    <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => onDeleteClick(lesson.id)}
+                                    disabled={isPending}
+                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                    title="Delete"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </>
                         )}
-                        <button
-                            onClick={() => onEdit(lesson)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Edit"
-                        >
-                            <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                            onClick={() => onDelete(lesson.id)}
-                            disabled={isPending}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                            title="Delete"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
                     </div>
                 )}
             </td>
@@ -168,6 +182,7 @@ export function LessonManagement({ initialLessons, unitId, unitTitle }: { initia
     const [editData, setEditData] = useState<{ title: string; type: string; order: number } | null>(null);
     const [isCreating, setIsCreating] = useState(false);
     const [newLesson, setNewLesson] = useState({ title: "", type: "vocabulary", order: lessons.length });
+    const [deletingId, setDeletingId] = useState<number | null>(null);
     const [isPending, startTransition] = useTransition();
 
     const sensors = useSensors(
@@ -240,18 +255,24 @@ export function LessonManagement({ initialLessons, unitId, unitTitle }: { initia
         });
     };
 
-    const handleDelete = async (lessonId: number) => {
-        if (!confirm("Are you sure you want to delete this lesson? This will also delete all vocabulary words.")) {
-            return;
-        }
+    const handleDeleteClick = (lessonId: number) => {
+        setDeletingId(lessonId);
+    };
 
+    const handleCancelDelete = () => {
+        setDeletingId(null);
+    };
+
+    const handleDelete = async (lessonId: number) => {
         startTransition(async () => {
             try {
                 await deleteLesson(lessonId);
                 setLessons(lessons.filter(l => l.id !== lessonId));
+                setDeletingId(null);
             } catch (error) {
                 console.error("Failed to delete lesson:", error);
                 alert("Failed to delete lesson. Please try again.");
+                setDeletingId(null);
             }
         });
     };
@@ -378,10 +399,13 @@ export function LessonManagement({ initialLessons, unitId, unitTitle }: { initia
                                             editingId={editingId}
                                             editData={editData}
                                             isPending={isPending}
+                                            deletingId={deletingId}
                                             onEdit={handleEdit}
                                             onCancel={handleCancel}
                                             onSave={handleSave}
-                                            onDelete={handleDelete}
+                                            onDeleteClick={handleDeleteClick}
+                                            onDeleteConfirm={handleDelete}
+                                            onCancelDelete={handleCancelDelete}
                                             setEditData={setEditData}
                                         />
                                     ))}

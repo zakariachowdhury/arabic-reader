@@ -12,6 +12,9 @@ export async function POST(request: NextRequest) {
     try {
         const formData = await request.formData();
         const file = formData.get("image") as File;
+        const selectedModel = formData.get("model") as string | null;
+        const customPrompt = formData.get("customPrompt") as string | null;
+        const existingWordsJson = formData.get("existingWords") as string | null;
 
         if (!file) {
             return NextResponse.json({ error: "No image file provided" }, { status: 400 });
@@ -20,6 +23,16 @@ export async function POST(request: NextRequest) {
         // Validate file type
         if (!file.type.startsWith("image/")) {
             return NextResponse.json({ error: "File must be an image" }, { status: 400 });
+        }
+
+        // Parse existing words for duplicate checking
+        let existingWords: Array<{ arabic: string; english: string }> = [];
+        if (existingWordsJson) {
+            try {
+                existingWords = JSON.parse(existingWordsJson);
+            } catch (e) {
+                console.error("Failed to parse existing words:", e);
+            }
         }
 
         // Convert file to base64
@@ -48,7 +61,10 @@ export async function POST(request: NextRequest) {
         ];
 
         let model = visionModels[0]; // Default
-        if (config.supportedModels.length > 0) {
+        if (selectedModel && config.supportedModels.includes(selectedModel)) {
+            // Use selected model if it's in supported list
+            model = selectedModel;
+        } else if (config.supportedModels.length > 0) {
             // Find first supported vision model
             const supportedVisionModel = visionModels.find((m) =>
                 config.supportedModels.includes(m)
@@ -58,21 +74,22 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Prepare the vision message
-        const messages = [
-            {
-                role: "user" as const,
-                content: [
-                    {
-                        type: "text" as const,
-                        text: `You are an expert in Arabic language education. Analyze this image of a vocabulary page from an Arabic textbook. Extract all Arabic-English word pairs from the page.
+        // Build the base prompt
+        let basePrompt = `You are an expert in Arabic language education. Analyze this image of a vocabulary page from an Arabic textbook. Extract all Arabic-English word pairs from the page.
 
-The image shows a vocabulary dictionary page with:
-- Arabic words/phrases in one column
-- English translations in another column
-- Sometimes additional information like root forms or phonetic breakdowns
+CRITICAL: You must extract the EXACT words as they appear in the image. Do NOT generate, paraphrase, translate, or create new words. Copy the text character-by-character exactly as it appears in the image.
 
-Please extract ALL word pairs and return them as a JSON array in this exact format:
+The image shows a vocabulary dictionary page with a TWO-COLUMN layout:
+- **Left column**: Contains English translations, explanations, or contextual information
+- **Right column**: Contains Arabic words/phrases (or vice versa depending on page layout)
+- Sometimes there may be a third column with additional information like root forms, phonetic breakdowns, or morphological analysis
+
+IMPORTANT: The page has TWO main columns for word pairs. You must extract word pairs from BOTH columns, not just the first one. Look for:
+- English text in one column paired with Arabic text in another column
+- Each row typically represents one vocabulary word pair
+- Some rows may have additional information (morphological breakdowns, root forms, etc.) - extract the main word pair
+
+Please extract ALL word pairs from BOTH columns and return them as a JSON array in this exact format:
 [
   {
     "arabic": "الْعَرَبِيَّةُ",
@@ -84,13 +101,30 @@ Please extract ALL word pairs and return them as a JSON array in this exact form
   }
 ]
 
-Important:
+Important extraction rules:
+- Extract word pairs from BOTH the left and right columns (or all columns if there are more)
 - Extract only actual vocabulary word pairs (Arabic and English)
-- Ignore headers, titles, page numbers, and other metadata
-- If a word has multiple translations, use the primary/main translation
-- Preserve Arabic diacritics (tashkeel) if present
+- Ignore headers, titles, page numbers, section titles, and other metadata
+- COPY THE EXACT TEXT from the image - do not translate, paraphrase, or generate alternative words
+- For Arabic words: Copy the exact Arabic text as it appears, including all diacritics (tashkeel)
+- For English words: Copy the exact English text as it appears, including capitalization and punctuation
+- If a word has multiple translations shown, extract the exact text of the primary/main translation as it appears
+- If there are morphological breakdowns in parentheses, extract the main word exactly as shown (not the breakdown)
+- DO NOT create synonyms or alternative translations - use only what is visible in the image
 - Return ONLY valid JSON, no additional text or explanation
-- If you find no word pairs, return an empty array: []`,
+- If you find no word pairs, return an empty array: []`;
+
+        // Use custom prompt if provided, otherwise use base prompt
+        const promptText = customPrompt?.trim() || basePrompt;
+
+        // Prepare the vision message
+        const messages = [
+            {
+                role: "user" as const,
+                content: [
+                    {
+                        type: "text" as const,
+                        text: promptText,
                     },
                     {
                         type: "image_url" as const,
@@ -114,7 +148,7 @@ Important:
             body: JSON.stringify({
                 model,
                 messages,
-                temperature: 0.1, // Low temperature for more consistent extraction
+                temperature: 0, // Zero temperature for exact extraction without generation
             }),
         });
 
@@ -130,6 +164,7 @@ Important:
 
         // Parse the JSON response
         let wordPairs: Array<{ arabic: string; english: string }> = [];
+        let duplicates: Array<{ arabic: string; english: string }> = [];
         
         try {
             // Try to extract JSON from the response (in case there's extra text)
@@ -154,6 +189,27 @@ Important:
                     english: String(pair.english).trim(),
                 }))
                 .filter((pair) => pair.arabic.length > 0 && pair.english.length > 0);
+
+            // Filter out duplicates based on existing words
+            // Normalize for comparison (case-insensitive, trim whitespace)
+            const normalizeWord = (text: string) => text.toLowerCase().trim();
+            const existingWordsSet = new Set(
+                existingWords.map((w) => 
+                    `${normalizeWord(w.arabic)}|${normalizeWord(w.english)}`
+                )
+            );
+
+            const duplicates: Array<{ arabic: string; english: string }> = [];
+            const uniqueWordPairs = wordPairs.filter((pair) => {
+                const normalized = `${normalizeWord(pair.arabic)}|${normalizeWord(pair.english)}`;
+                if (existingWordsSet.has(normalized)) {
+                    duplicates.push(pair);
+                    return false;
+                }
+                return true;
+            });
+
+            wordPairs = uniqueWordPairs;
         } catch (parseError) {
             console.error("Failed to parse AI response:", parseError);
             console.error("Response content:", content);
@@ -169,6 +225,7 @@ Important:
         return NextResponse.json({
             success: true,
             wordPairs,
+            duplicates: duplicates || [],
             model: data.model || model,
         });
     } catch (error) {

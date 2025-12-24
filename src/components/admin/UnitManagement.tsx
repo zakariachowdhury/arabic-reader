@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Unit } from "@/db/schema";
 import { createUnit, updateUnit, deleteUnit, updateUnitOrder } from "@/app/admin/actions";
 import { Edit2, Trash2, Save, X, Plus, BookOpen, GripVertical } from "lucide-react";
+import { DeleteConfirmation } from "./DeleteConfirmation";
 import Link from "next/link";
 import {
     DndContext,
@@ -23,15 +24,18 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-function SortableUnitRow({ unit, editingId, editData, isPending, onEdit, onCancel, onSave, onDelete, setEditData }: {
+function SortableUnitRow({ unit, editingId, editData, isPending, deletingId, onEdit, onCancel, onSave, onDeleteClick, onDeleteConfirm, onCancelDelete, setEditData }: {
     unit: Unit;
     editingId: number | null;
     editData: { title: string; order: number } | null;
     isPending: boolean;
+    deletingId: number | null;
     onEdit: (unit: Unit) => void;
     onCancel: () => void;
     onSave: (unitId: number) => void;
-    onDelete: (unitId: number) => void;
+    onDeleteClick: (unitId: number) => void;
+    onDeleteConfirm: (unitId: number) => void;
+    onCancelDelete: () => void;
     setEditData: (data: { title: string; order: number } | null) => void;
 }) {
     const {
@@ -107,28 +111,38 @@ function SortableUnitRow({ unit, editingId, editData, isPending, onEdit, onCance
                     </div>
                 ) : (
                     <div className="flex items-center justify-end gap-2">
-                        <Link
-                            href={`/admin/units/${unit.id}/lessons`}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Manage Lessons"
-                        >
-                            <BookOpen className="w-4 h-4" />
-                        </Link>
-                        <button
-                            onClick={() => onEdit(unit)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Edit"
-                        >
-                            <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                            onClick={() => onDelete(unit.id)}
-                            disabled={isPending}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                            title="Delete"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
+                        <DeleteConfirmation
+                            isDeleting={deletingId === unit.id}
+                            onConfirm={() => onDeleteConfirm(unit.id)}
+                            onCancel={onCancelDelete}
+                            isPending={isPending}
+                        />
+                        {deletingId !== unit.id && (
+                            <>
+                                <Link
+                                    href={`/admin/units/${unit.id}/lessons`}
+                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    title="Manage Lessons"
+                                >
+                                    <BookOpen className="w-4 h-4" />
+                                </Link>
+                                <button
+                                    onClick={() => onEdit(unit)}
+                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    title="Edit"
+                                >
+                                    <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => onDeleteClick(unit.id)}
+                                    disabled={isPending}
+                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                                    title="Delete"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </>
+                        )}
                     </div>
                 )}
             </td>
@@ -142,6 +156,7 @@ export function UnitManagement({ initialUnits, bookId, bookTitle }: { initialUni
     const [editData, setEditData] = useState<{ title: string; order: number } | null>(null);
     const [isCreating, setIsCreating] = useState(false);
     const [newUnit, setNewUnit] = useState({ title: "", order: units.length });
+    const [deletingId, setDeletingId] = useState<number | null>(null);
     const [isPending, startTransition] = useTransition();
 
     const sensors = useSensors(
@@ -211,18 +226,24 @@ export function UnitManagement({ initialUnits, bookId, bookTitle }: { initialUni
         });
     };
 
-    const handleDelete = async (unitId: number) => {
-        if (!confirm("Are you sure you want to delete this unit? This will also delete all lessons and vocabulary words.")) {
-            return;
-        }
+    const handleDeleteClick = (unitId: number) => {
+        setDeletingId(unitId);
+    };
 
+    const handleCancelDelete = () => {
+        setDeletingId(null);
+    };
+
+    const handleDelete = async (unitId: number) => {
         startTransition(async () => {
             try {
                 await deleteUnit(unitId);
                 setUnits(units.filter(u => u.id !== unitId));
+                setDeletingId(null);
             } catch (error) {
                 console.error("Failed to delete unit:", error);
                 alert("Failed to delete unit. Please try again.");
+                setDeletingId(null);
             }
         });
     };
@@ -335,10 +356,13 @@ export function UnitManagement({ initialUnits, bookId, bookTitle }: { initialUni
                                             editingId={editingId}
                                             editData={editData}
                                             isPending={isPending}
+                                            deletingId={deletingId}
                                             onEdit={handleEdit}
                                             onCancel={handleCancel}
                                             onSave={handleSave}
-                                            onDelete={handleDelete}
+                                            onDeleteClick={handleDeleteClick}
+                                            onDeleteConfirm={handleDelete}
+                                            onCancelDelete={handleCancelDelete}
                                             setEditData={setEditData}
                                         />
                                     ))}

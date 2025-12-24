@@ -5,6 +5,7 @@ import { GroupBadge, GroupSelector } from "@/components/GroupSelector";
 import { type Group } from "@/db/schema";
 import { Trash2, CheckCircle2, Circle, Pencil, X, Check } from "lucide-react";
 import { useTransition, useState } from "react";
+import { DeleteConfirmation } from "./admin/DeleteConfirmation";
 
 type TodoWithGroup = {
     id: number;
@@ -116,25 +117,13 @@ export function TodoItem({ todo, groups, showGroupBadge = true }: { todo: TodoWi
                     </>
                 ) : (
                     <>
-                        {isDeleting ? (
-                            <div className="flex items-center gap-1 bg-red-50 rounded-lg p-1 animate-in fade-in zoom-in duration-200">
-                                <span className="text-[10px] font-bold text-red-600 px-2 uppercase tracking-tight">Delete?</span>
-                                <button
-                                    onClick={() => startTransition(() => deleteTodo(todo.id))}
-                                    className="p-1.5 text-red-600 hover:bg-red-100 rounded-md transition-all"
-                                    aria-label="Confirm delete"
-                                >
-                                    <Check className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                    onClick={() => setIsDeleting(false)}
-                                    className="p-1.5 text-slate-400 hover:bg-white rounded-md transition-all shadow-sm"
-                                    aria-label="Cancel delete"
-                                >
-                                    <X className="w-3.5 h-3.5" />
-                                </button>
-                            </div>
-                        ) : (
+                        <DeleteConfirmation
+                            isDeleting={isDeleting}
+                            onConfirm={() => startTransition(() => deleteTodo(todo.id))}
+                            onCancel={() => setIsDeleting(false)}
+                            isPending={isPending}
+                        />
+                        {!isDeleting && (
                             <>
                                 <button
                                     onClick={() => setIsEditing(true)}
