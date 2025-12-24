@@ -651,8 +651,12 @@ export async function getLessonNavigationUrl(lessonId: number, lessonType: strin
             return `/lessons/${lessonId}/test`;
         }
         return `/lessons/${lessonId}/vocabulary`;
+    } else if (lessonType === "reading") {
+        return `/lessons/${lessonId}/reading`;
+    } else if (lessonType === "conversation") {
+        return `/lessons/${lessonId}/conversation`;
     }
-    return `/units/${lessonId}`; // Fallback
+    return `/units/${lessonId}`; // Fallback for unknown types
 }
 
 // Find vocabulary word and its lesson info
@@ -1018,10 +1022,18 @@ For navigation links, use these URL patterns:
 - Books: /books/{bookId}
 - Units: /units/{unitId}
 - Lessons: 
-  - /lessons/{lessonId}/vocabulary (default vocabulary lesson)
-  - /lessons/{lessonId}/learn (learn mode - flashcards)
-  - /lessons/{lessonId}/practice (practice mode - interactive practice)
-  - /lessons/{lessonId}/test (test mode - quiz/test)
+  - /lessons/{lessonId}/vocabulary (for vocabulary type lessons)
+  - /lessons/{lessonId}/reading (for reading type lessons)
+  - /lessons/{lessonId}/conversation (for conversation type lessons)
+  - /lessons/{lessonId}/learn (learn mode - flashcards, only for vocabulary lessons)
+  - /lessons/{lessonId}/practice (practice mode - interactive practice, only for vocabulary lessons)
+  - /lessons/{lessonId}/test (test mode - quiz/test, only for vocabulary lessons)
+  
+IMPORTANT: When creating navigation links for lessons, you MUST:
+1. Use the correct lessonId from the lesson structure above
+2. Match the URL path to the lesson type (vocabulary → /vocabulary, reading → /reading, conversation → /conversation)
+3. Do NOT use /vocabulary for reading or conversation lessons
+4. Verify the lesson ID exists in the structure before creating the link
 
 For search results, include:
 - type: "book" | "unit" | "lesson" | "vocabulary"
@@ -1216,11 +1228,30 @@ Important:
                         const bookMatch = cleanedContent.match(bookPattern);
                         
                         if (lessonMatch) {
-                            const lessonId = lessonMatch[1];
-                            fallbackNavigationLinks.push({
-                                label: `Lesson ${lessonId} Vocabulary`,
-                                url: `/lessons/${lessonId}/vocabulary`,
-                            });
+                            const lessonIdStr = lessonMatch[1];
+                            // Check if it's a numeric lesson ID (not unit.lesson format)
+                            if (/^\d+$/.test(lessonIdStr)) {
+                                const lessonId = parseInt(lessonIdStr);
+                                try {
+                                    const lesson = await getLessonById(lessonId);
+                                    if (lesson) {
+                                        const url = await getLessonNavigationUrl(lesson.id, lesson.type);
+                                        fallbackNavigationLinks.push({
+                                            label: lesson.title,
+                                            url,
+                                        });
+                                    }
+                                } catch {
+                                    // If lookup fails, fall back to vocabulary
+                                    fallbackNavigationLinks.push({
+                                        label: `Lesson ${lessonId} Vocabulary`,
+                                        url: `/lessons/${lessonId}/vocabulary`,
+                                    });
+                                }
+                            } else {
+                                // For unit.lesson format (e.g., "1.3"), we'd need more complex parsing
+                                // For now, skip as it requires unit/lesson lookup
+                            }
                         } else if (unitMatch) {
                             const unitId = unitMatch[1];
                             fallbackNavigationLinks.push({
@@ -1463,8 +1494,53 @@ Important:
         }
 
         // Add navigation links from response if provided
+        // Validate and correct lesson URLs to ensure they use the correct lesson type and ID
         if (aiResponse.navigationLinks && Array.isArray(aiResponse.navigationLinks)) {
-            navigationLinks.push(...aiResponse.navigationLinks);
+            for (const link of aiResponse.navigationLinks) {
+                // Check if this is a lesson URL that needs validation
+                const lessonUrlMatch = link.url.match(/^\/lessons\/(\d+)\/(vocabulary|reading|conversation|learn|practice|test)$/);
+                if (lessonUrlMatch) {
+                    const lessonId = parseInt(lessonUrlMatch[1]);
+                    const urlType = lessonUrlMatch[2];
+                    
+                    // Look up the actual lesson to get its correct type
+                    try {
+                        const lesson = await getLessonById(lessonId);
+                        if (lesson) {
+                            // Check if URL type matches lesson type
+                            // For vocabulary lessons, allow learn/practice/test modes
+                            const isCorrectType = 
+                                (urlType === "vocabulary" && lesson.type === "vocabulary") ||
+                                (urlType === "reading" && lesson.type === "reading") ||
+                                (urlType === "conversation" && lesson.type === "conversation") ||
+                                ((urlType === "learn" || urlType === "practice" || urlType === "test") && lesson.type === "vocabulary");
+                            
+                            if (!isCorrectType) {
+                                // Correct the URL to use the actual lesson type
+                                const correctUrl = await getLessonNavigationUrl(lesson.id, lesson.type);
+                                navigationLinks.push({
+                                    label: link.label,
+                                    url: correctUrl,
+                                });
+                            } else {
+                                // URL is correct, use as-is
+                                navigationLinks.push(link);
+                            }
+                        } else {
+                            // Lesson not found - skip this invalid link
+                            // The navigate action should handle correct navigation via lessonId
+                            console.warn(`Lesson ${lessonId} not found for navigation link: ${link.url}. Skipping invalid link.`);
+                        }
+                    } catch (error) {
+                        // If lookup fails, use the original link
+                        console.warn(`Failed to validate lesson URL ${link.url}:`, error);
+                        navigationLinks.push(link);
+                    }
+                } else {
+                    // Not a lesson URL, use as-is
+                    navigationLinks.push(link);
+                }
+            }
         }
 
         // Handle "take me there" and similar navigation requests
@@ -1492,7 +1568,7 @@ Important:
                             const unit = units.find(u => u.order === unitNum);
                             if (unit) {
                                 const lessons = await getLessonsByUnit(unit.id);
-                                const lesson = lessons.find(l => l.order === lessonNum && l.type === "vocabulary");
+                                const lesson = lessons.find(l => l.order === lessonNum);
                                 if (lesson) {
                                     const url = await getLessonNavigationUrl(lesson.id, lesson.type);
                                     navigationLinks.push({
