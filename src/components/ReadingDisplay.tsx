@@ -5,7 +5,7 @@ import { ConversationSentence } from "@/db/schema";
 import { useArabicFontSize } from "@/contexts/ArabicFontSizeContext";
 import { Eye, EyeOff, Play, Pause, Volume2 } from "lucide-react";
 
-interface ConversationDisplayProps {
+interface ReadingDisplayProps {
     sentences: ConversationSentence[];
 }
 
@@ -59,7 +59,7 @@ function playAudio(text: string, lang: string = "en-US", onEnd?: () => void) {
     }
 }
 
-export function ConversationDisplay({ sentences }: ConversationDisplayProps) {
+export function ReadingDisplay({ sentences }: ReadingDisplayProps) {
     const { getArabicFontSize } = useArabicFontSize();
     const [showTranslations, setShowTranslations] = useState(true);
     const [selectedLanguage, setSelectedLanguage] = useState<Language>("arabic");
@@ -70,15 +70,8 @@ export function ConversationDisplay({ sentences }: ConversationDisplayProps) {
     const shouldContinuePlayingRef = useRef<boolean>(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Sort sentences by order for sequential playback
+    // Sort sentences by order for sequential display and playback
     const sortedSentences = [...sentences].sort((a, b) => a.order - b.order);
-
-    // Split sentences into left and right columns based on order
-    // Arabic conversations start from right to left, so:
-    // Even orders (0, 2, 4...) go to right column (first sentence)
-    // Odd orders (1, 3, 5...) go to left column
-    const rightColumnSentences = sentences.filter(s => s.order % 2 === 0);
-    const leftColumnSentences = sentences.filter(s => s.order % 2 === 1);
 
     // Play all sentences sequentially
     const handlePlayAll = () => {
@@ -341,7 +334,7 @@ export function ConversationDisplay({ sentences }: ConversationDisplayProps) {
         <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
             <div className="p-6 border-b border-slate-100">
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-slate-900">Conversation</h2>
+                    <h2 className="text-2xl font-bold text-slate-900">Reading</h2>
                     <button
                         onClick={() => setShowTranslations(!showTranslations)}
                         className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
@@ -368,7 +361,7 @@ export function ConversationDisplay({ sentences }: ConversationDisplayProps) {
                         <select
                             value={selectedLanguage}
                             onChange={(e) => setSelectedLanguage(e.target.value as Language)}
-                            className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                            className="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                         >
                             <option value="arabic">Arabic</option>
                             <option value="english">English</option>
@@ -379,7 +372,7 @@ export function ConversationDisplay({ sentences }: ConversationDisplayProps) {
                     <button
                         onClick={handlePlayAll}
                         disabled={sortedSentences.length === 0}
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {isPlayingAll ? (
                             <>
@@ -398,162 +391,78 @@ export function ConversationDisplay({ sentences }: ConversationDisplayProps) {
 
             {sentences.length === 0 ? (
                 <div className="p-12 text-center">
-                    <p className="text-slate-500 text-lg">No conversation sentences available.</p>
+                    <p className="text-slate-500 text-lg">No reading sentences available.</p>
                 </div>
             ) : (
                 <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Right Column (first in RTL) */}
-                        <div className="space-y-4 md:order-2">
-                            {rightColumnSentences.map((sentence, index) => {
-                                const isPlaying = playingSentenceId === sentence.id;
-                                const hasText = selectedLanguage === "arabic" 
-                                    ? sentence.arabic && sentence.arabic.trim().length > 0
-                                    : selectedLanguage === "english"
-                                    ? sentence.english && sentence.english.trim().length > 0
-                                    : (sentence.arabic && sentence.arabic.trim().length > 0) || (sentence.english && sentence.english.trim().length > 0);
-                                
-                                return (
-                                    <div
-                                        key={sentence.id}
-                                        className={`${sentence.isTitle 
-                                            ? "bg-red-50 border-red-300" 
-                                            : "bg-emerald-50 border-emerald-200"
-                                        } border rounded-lg p-4 shadow-sm transition-all ${
-                                            isPlaying 
-                                                ? `${sentence.isTitle 
-                                                    ? "border-red-500 border-2 bg-red-100 shadow-md ring-2 ring-red-200" 
-                                                    : "border-emerald-500 border-2 bg-emerald-100 shadow-md ring-2 ring-emerald-200"
-                                                }` 
-                                                : ""
-                                        }`}
-                                    >
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="flex-1">
-                                                <div
-                                                    className={`font-medium mb-2 ${
-                                                        sentence.isTitle 
-                                                            ? "text-red-700 font-bold" 
-                                                            : "text-slate-900"
-                                                    }`}
-                                                    dir="rtl"
-                                                    style={{ fontSize: getArabicFontSize(sentence.isTitle ? "text-xl" : "text-lg") }}
-                                                >
-                                                    {sentence.arabic}
-                                                </div>
-                                                {showTranslations && sentence.english && (
-                                                    <div className={`text-sm mt-2 pt-2 border-t ${
-                                                        sentence.isTitle 
-                                                            ? "text-red-600 border-red-200" 
-                                                            : "text-slate-600 border-emerald-200"
-                                                    }`}>
-                                                        {sentence.english}
-                                                    </div>
-                                                )}
+                    <div className="max-w-4xl mx-auto space-y-4">
+                        {sortedSentences.map((sentence) => {
+                            const isPlaying = playingSentenceId === sentence.id;
+                            const hasText = selectedLanguage === "arabic" 
+                                ? sentence.arabic && sentence.arabic.trim().length > 0
+                                : selectedLanguage === "english"
+                                ? sentence.english && sentence.english.trim().length > 0
+                                : (sentence.arabic && sentence.arabic.trim().length > 0) || (sentence.english && sentence.english.trim().length > 0);
+                            
+                            return (
+                                <div
+                                    key={sentence.id}
+                                    className={`${sentence.isTitle 
+                                        ? "bg-red-50 border-red-300" 
+                                        : "bg-purple-50 border-purple-200"
+                                    } border rounded-lg p-4 shadow-sm transition-all ${
+                                        isPlaying 
+                                            ? `${sentence.isTitle 
+                                                ? "border-red-500 border-2 bg-red-100 shadow-md ring-2 ring-red-200" 
+                                                : "border-purple-500 border-2 bg-purple-100 shadow-md ring-2 ring-purple-200"
+                                            }` 
+                                            : ""
+                                    }`}
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex-1">
+                                            <div
+                                                className={`font-medium mb-2 ${
+                                                    sentence.isTitle 
+                                                        ? "text-red-700 font-bold" 
+                                                        : "text-slate-900"
+                                                }`}
+                                                dir="rtl"
+                                                style={{ fontSize: getArabicFontSize(sentence.isTitle ? "text-xl" : "text-lg") }}
+                                            >
+                                                {sentence.arabic}
                                             </div>
-                                            {hasText && (
-                                                <button
-                                                    onClick={() => handlePlaySentence(sentence)}
-                                                    className={`flex-shrink-0 p-2 rounded-lg transition-colors ${
-                                                        isPlaying
-                                                            ? "bg-emerald-600 text-white"
-                                                            : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                                                    }`}
-                                                    title={selectedLanguage === "both" ? "Play Arabic then English" : `Play ${selectedLanguage === "arabic" ? "Arabic" : "English"} audio`}
-                                                >
-                                                    {isPlaying ? (
-                                                        <Pause className="w-4 h-4" />
-                                                    ) : (
-                                                        <Volume2 className="w-4 h-4" />
-                                                    )}
-                                                </button>
+                                            {showTranslations && sentence.english && (
+                                                <div className={`text-sm mt-2 pt-2 border-t ${
+                                                    sentence.isTitle 
+                                                        ? "text-red-600 border-red-200" 
+                                                        : "text-slate-600 border-purple-200"
+                                                }`}>
+                                                    {sentence.english}
+                                                </div>
                                             )}
                                         </div>
-                                    </div>
-                                );
-                            })}
-                            {rightColumnSentences.length === 0 && (
-                                <div className="text-center text-slate-400 py-8">
-                                    <p className="text-sm">No sentences in this column</p>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Left Column */}
-                        <div className="space-y-4 md:order-1">
-                            {leftColumnSentences.map((sentence, index) => {
-                                const isPlaying = playingSentenceId === sentence.id;
-                                const hasText = selectedLanguage === "arabic" 
-                                    ? sentence.arabic && sentence.arabic.trim().length > 0
-                                    : selectedLanguage === "english"
-                                    ? sentence.english && sentence.english.trim().length > 0
-                                    : (sentence.arabic && sentence.arabic.trim().length > 0) || (sentence.english && sentence.english.trim().length > 0);
-                                
-                                return (
-                                    <div
-                                        key={sentence.id}
-                                        className={`${sentence.isTitle 
-                                            ? "bg-red-50 border-red-300" 
-                                            : "bg-blue-50 border-blue-200"
-                                        } border rounded-lg p-4 shadow-sm transition-all ${
-                                            isPlaying 
-                                                ? `${sentence.isTitle 
-                                                    ? "border-red-500 border-2 bg-red-100 shadow-md ring-2 ring-red-200" 
-                                                    : "border-blue-500 border-2 bg-blue-100 shadow-md ring-2 ring-blue-200"
-                                                }` 
-                                                : ""
-                                        }`}
-                                    >
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="flex-1">
-                                                <div
-                                                    className={`font-medium mb-2 ${
-                                                        sentence.isTitle 
-                                                            ? "text-red-700 font-bold" 
-                                                            : "text-slate-900"
-                                                    }`}
-                                                    dir="rtl"
-                                                    style={{ fontSize: getArabicFontSize(sentence.isTitle ? "text-xl" : "text-lg") }}
-                                                >
-                                                    {sentence.arabic}
-                                                </div>
-                                                {showTranslations && sentence.english && (
-                                                    <div className={`text-sm mt-2 pt-2 border-t ${
-                                                        sentence.isTitle 
-                                                            ? "text-red-600 border-red-200" 
-                                                            : "text-slate-600 border-blue-200"
-                                                    }`}>
-                                                        {sentence.english}
-                                                    </div>
+                                        {hasText && (
+                                            <button
+                                                onClick={() => handlePlaySentence(sentence)}
+                                                className={`flex-shrink-0 p-2 rounded-lg transition-colors ${
+                                                    isPlaying
+                                                        ? "bg-purple-600 text-white"
+                                                        : "bg-purple-100 text-purple-700 hover:bg-purple-200"
+                                                }`}
+                                                title={selectedLanguage === "both" ? "Play Arabic then English" : `Play ${selectedLanguage === "arabic" ? "Arabic" : "English"} audio`}
+                                            >
+                                                {isPlaying ? (
+                                                    <Pause className="w-4 h-4" />
+                                                ) : (
+                                                    <Volume2 className="w-4 h-4" />
                                                 )}
-                                            </div>
-                                            {hasText && (
-                                                <button
-                                                    onClick={() => handlePlaySentence(sentence)}
-                                                    className={`flex-shrink-0 p-2 rounded-lg transition-colors ${
-                                                        isPlaying
-                                                            ? "bg-blue-600 text-white"
-                                                            : "bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                                    }`}
-                                                    title={selectedLanguage === "both" ? "Play Arabic then English" : `Play ${selectedLanguage === "arabic" ? "Arabic" : "English"} audio`}
-                                                >
-                                                    {isPlaying ? (
-                                                        <Pause className="w-4 h-4" />
-                                                    ) : (
-                                                        <Volume2 className="w-4 h-4" />
-                                                    )}
-                                                </button>
-                                            )}
-                                        </div>
+                                            </button>
+                                        )}
                                     </div>
-                                );
-                            })}
-                            {leftColumnSentences.length === 0 && (
-                                <div className="text-center text-slate-400 py-8">
-                                    <p className="text-sm">No sentences in this column</p>
                                 </div>
-                            )}
-                        </div>
+                            );
+                        })}
                     </div>
                 </div>
             )}

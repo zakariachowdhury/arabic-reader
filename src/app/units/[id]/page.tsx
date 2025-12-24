@@ -84,10 +84,11 @@ export default async function UnitDetailPage({ params }: { params: Promise<{ id:
                             const getLessonUrl = () => {
                                 if (lesson.type === "vocabulary") return `/lessons/${lesson.id}/vocabulary`;
                                 if (lesson.type === "conversation") return `/lessons/${lesson.id}/conversation`;
+                                if (lesson.type === "reading") return `/lessons/${lesson.id}/reading`;
                                 return "#";
                             };
                             
-                            const isClickable = lesson.type === "vocabulary" || lesson.type === "conversation";
+                            const isClickable = lesson.type === "vocabulary" || lesson.type === "conversation" || lesson.type === "reading";
                             
                             return (
                                 <Link

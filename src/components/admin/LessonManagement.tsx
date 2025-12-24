@@ -87,6 +87,20 @@ function SortableLessonRow({ lesson, editingId, editData, isPending, deletingId,
                             >
                                 {lesson.title}
                             </Link>
+                        ) : lesson.type === "conversation" ? (
+                            <Link
+                                href={`/admin/lessons/${lesson.id}/conversation`}
+                                className="text-blue-600 hover:text-blue-700 hover:underline"
+                            >
+                                {lesson.title}
+                            </Link>
+                        ) : lesson.type === "reading" ? (
+                            <Link
+                                href={`/admin/lessons/${lesson.id}/reading`}
+                                className="text-blue-600 hover:text-blue-700 hover:underline"
+                            >
+                                {lesson.title}
+                            </Link>
                         ) : (
                             lesson.title
                         )}
@@ -187,6 +201,15 @@ function SortableLessonRow({ lesson, editingId, editData, isPending, deletingId,
                                         href={`/admin/lessons/${lesson.id}/conversation`}
                                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                         title="Manage Conversation"
+                                    >
+                                        <BookOpen className="w-4 h-4" />
+                                    </Link>
+                                )}
+                                {lesson.type === "reading" && (
+                                    <Link
+                                        href={`/admin/lessons/${lesson.id}/reading`}
+                                        className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                                        title="Manage Reading"
                                     >
                                         <BookOpen className="w-4 h-4" />
                                     </Link>
@@ -397,6 +420,7 @@ export function LessonManagement({ initialLessons, unitId, unitTitle }: { initia
                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
                                 <option value="vocabulary">Vocabulary</option>
+                                <option value="conversation">Conversation</option>
                                 <option value="reading">Reading</option>
                                 <option value="grammar">Grammar</option>
                                 <option value="exercise">Exercise</option>

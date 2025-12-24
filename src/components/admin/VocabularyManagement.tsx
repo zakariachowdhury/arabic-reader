@@ -469,6 +469,7 @@ export function VocabularyManagement({ initialWords, lessonId, lessonTitle }: { 
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [uploadProgress, setUploadProgress] = useState<string>("");
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
     
     // AI model selection states
     const [availableModels, setAvailableModels] = useState<string[]>([]);
@@ -692,6 +693,8 @@ export function VocabularyManagement({ initialWords, lessonId, lessonTitle }: { 
             if (data.wordPairs && data.wordPairs.length > 0) {
                 setParsedWords(data.wordPairs);
                 setDuplicates(data.duplicates || []);
+                // Select all words by default
+                setSelectedIndices(new Set(data.wordPairs.map((_, index) => index)));
                 setShowParsedWords(true);
                 setUploadProgress(`Successfully extracted ${data.wordPairs.length} word pair${data.wordPairs.length !== 1 ? 's' : ''}${data.duplicates && data.duplicates.length > 0 ? ` (${data.duplicates.length} duplicate${data.duplicates.length !== 1 ? 's' : ''} excluded)` : ''}`);
             } else {
@@ -715,13 +718,21 @@ export function VocabularyManagement({ initialWords, lessonId, lessonTitle }: { 
     const handleBulkAdd = async () => {
         if (!parsedWords || parsedWords.length === 0) return;
 
+        // Only add selected words
+        const selectedWords = parsedWords.filter((_, index) => selectedIndices.has(index));
+        if (selectedWords.length === 0) {
+            alert("Please select at least one word pair to add.");
+            return;
+        }
+
         startTransition(async () => {
             try {
-                const created = await bulkAddVocabularyWords(lessonId, parsedWords);
+                const created = await bulkAddVocabularyWords(lessonId, selectedWords);
                 setWords([...words, ...created]);
                 setParsedWords(null);
                 setDuplicates(null);
                 setShowParsedWords(false);
+                setSelectedIndices(new Set());
                 setUploadError(null);
                 setUploadProgress("");
                 setSelectedFile(null);
@@ -740,6 +751,7 @@ export function VocabularyManagement({ initialWords, lessonId, lessonTitle }: { 
         setParsedWords(null);
         setDuplicates(null);
         setShowParsedWords(false);
+        setSelectedIndices(new Set());
         setUploadError(null);
         setUploadProgress("");
         setSelectedFile(null);
@@ -747,6 +759,27 @@ export function VocabularyManagement({ initialWords, lessonId, lessonTitle }: { 
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
+    };
+
+    const toggleSelectAll = () => {
+        if (!parsedWords) return;
+        if (selectedIndices.size === parsedWords.length) {
+            // Deselect all
+            setSelectedIndices(new Set());
+        } else {
+            // Select all
+            setSelectedIndices(new Set(parsedWords.map((_, index) => index)));
+        }
+    };
+
+    const toggleSelectIndex = (index: number) => {
+        const newSelected = new Set(selectedIndices);
+        if (newSelected.has(index)) {
+            newSelected.delete(index);
+        } else {
+            newSelected.add(index);
+        }
+        setSelectedIndices(newSelected);
     };
 
     const handleDragEnd = async (event: DragEndEvent) => {
@@ -1068,11 +1101,11 @@ export function VocabularyManagement({ initialWords, lessonId, lessonTitle }: { 
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={handleBulkAdd}
-                                disabled={isPending || parsedWords.length === 0}
+                                disabled={isPending || selectedIndices.size === 0}
                                 className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
                             >
                                 <CheckCircle2 className="w-4 h-4" />
-                                Add All ({parsedWords.length})
+                                Add Selected ({selectedIndices.size})
                             </button>
                             <button
                                 onClick={handleCancelParsed}
@@ -1088,6 +1121,15 @@ export function VocabularyManagement({ initialWords, lessonId, lessonTitle }: { 
                         <table className="w-full">
                             <thead className="bg-slate-50 sticky top-0">
                                 <tr>
+                                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider w-12">
+                                        <input
+                                            type="checkbox"
+                                            checked={parsedWords.length > 0 && selectedIndices.size === parsedWords.length}
+                                            onChange={toggleSelectAll}
+                                            className="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
+                                            title="Select/Deselect all"
+                                        />
+                                    </th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Arabic</th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">English</th>
                                     <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
@@ -1095,7 +1137,15 @@ export function VocabularyManagement({ initialWords, lessonId, lessonTitle }: { 
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {parsedWords.map((word, index) => (
-                                    <tr key={index} className="hover:bg-slate-50 transition-colors">
+                                    <tr key={index} className={`hover:bg-slate-50 transition-colors ${selectedIndices.has(index) ? 'bg-emerald-50' : ''}`}>
+                                        <td className="px-4 py-3">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIndices.has(index)}
+                                                onChange={() => toggleSelectIndex(index)}
+                                                className="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500"
+                                            />
+                                        </td>
                                         <td className="px-4 py-3">
                                             <input
                                                 type="text"

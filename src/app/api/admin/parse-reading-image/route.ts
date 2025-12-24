@@ -117,24 +117,23 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // Build the base prompt
-        let basePrompt = `You are an expert in Arabic language education. Analyze this image of a conversation page from an Arabic textbook. Extract all Arabic sentences from the page, along with their English translations if visible.
+        // Build the base prompt for reading pages
+        let basePrompt = `You are an expert in Arabic language education. Analyze this image of a reading page from an Arabic textbook. Extract all Arabic sentences from the page, along with their English translations if visible.
 
 CRITICAL: You must extract the EXACT Arabic text as it appears in the image. Do NOT generate, paraphrase, or create new sentences. Copy the text character-by-character exactly as it appears in the image, including all diacritics (tashkeel).
 
-The image shows a conversation page with a TWO-COLUMN layout:
-- **Left column**: Contains speech bubbles with Arabic sentences (or English translations)
-- **Right column**: Contains speech bubbles with Arabic sentences (or English translations)
-- Sentences alternate between left and right columns as the conversation flows
-- Each speech bubble typically contains one or more Arabic sentences
-- Some speech bubbles may have English translations visible (handwritten notes, annotations, or separate text)
+The image shows a reading page with sentences displayed sequentially (one after another):
+- Sentences are typically arranged in a single column or flowing layout
+- Each sentence appears one after another in reading order (top to bottom)
+- Some sentences may have English translations visible (handwritten notes, annotations, or separate text)
+- The text flows naturally from one sentence to the next
 
-IMPORTANT: The page has TWO main columns for conversation sentences. You must extract sentences from BOTH columns, not just the first one. Look for:
-- Arabic sentences in speech bubbles in both left and right columns
+IMPORTANT: Extract sentences in the order they appear from top to bottom. Look for:
+- Arabic sentences displayed sequentially
 - English translations if they appear (in annotations, notes, or separate text)
-- The order of sentences should follow the natural flow of the conversation (top to bottom, alternating columns)
+- The order of sentences should follow the natural reading flow (top to bottom)
 
-Please extract ALL sentences from BOTH columns and return them as a JSON array in this exact format:
+Please extract ALL sentences in order and return them as a JSON array in this exact format:
 [
   {
     "arabic": "السَّلامُ عَلَيْكُمْ !",
@@ -161,17 +160,17 @@ IMPORTANT: If you find a title or heading text (typically displayed prominently,
 - Short phrases that introduce the content
 
 Important extraction rules:
-- Extract sentences from BOTH the left and right columns
-- Extract actual conversation sentences (Arabic text in speech bubbles) AND any titles/headings
+- Extract sentences in sequential order (top to bottom)
+- Extract actual reading sentences (Arabic text) AND any titles/headings
 - For titles/headings: Set "isTitle": true
 - For regular sentences: Set "isTitle": false
-- Ignore page numbers, section numbers, character names, and other metadata (but DO extract titles/headings)
+- Ignore page numbers, section numbers, and other metadata (but DO extract titles/headings)
 - COPY THE EXACT ARABIC TEXT from the image - do not translate, paraphrase, or generate alternative sentences
 - For Arabic sentences: Copy the exact Arabic text as it appears, including all diacritics (tashkeel)
 - For English translations: If visible in the image, copy the exact English text. If not visible, you may provide a translation based on the vocabulary context provided below, but mark it clearly if it's inferred rather than extracted
-- Extract sentences in the order they appear (top to bottom, left to right)
-- Each speech bubble typically represents one sentence entry
-- If a speech bubble contains multiple sentences, you may split them into separate entries
+- Extract sentences in the order they appear (top to bottom)
+- Each sentence typically represents one entry
+- If a paragraph contains multiple sentences, you may split them into separate entries
 - Return ONLY valid JSON, no additional text or explanation
 - If you find no sentences, return an empty array: []${vocabularyContext}`;
 
@@ -291,10 +290,10 @@ Important extraction rules:
             model: data.model || model,
         });
     } catch (error) {
-        console.error("Error parsing conversation image:", error);
+        console.error("Error parsing reading image:", error);
         return NextResponse.json(
             {
-                error: error instanceof Error ? error.message : "Failed to parse conversation image",
+                error: error instanceof Error ? error.message : "Failed to parse reading image",
             },
             { status: 500 }
         );

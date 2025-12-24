@@ -73,7 +73,7 @@ function playAudio(text: string, lang: string = "en-US", onEnd?: () => void) {
     }
 }
 
-function ConversationRow({ sentence, editingId, editData, isPending, deletingId, onEdit, onCancel, onSave, onDeleteClick, onDeleteConfirm, onCancelDelete, setEditData, playingAudio, setPlayingAudio }: {
+function ReadingRow({ sentence, editingId, editData, isPending, deletingId, onEdit, onCancel, onSave, onDeleteClick, onDeleteConfirm, onCancelDelete, setEditData, playingAudio, setPlayingAudio }: {
     sentence: ConversationSentence;
     editingId: number | null;
     editData: { arabic: string; english: string | null; order: number; isTitle: boolean } | null;
@@ -128,7 +128,7 @@ function ConversationRow({ sentence, editingId, editData, isPending, deletingId,
                         type="text"
                         value={editData?.arabic || ""}
                         onChange={(e) => setEditData({ ...editData!, arabic: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                         dir="rtl"
                     />
                 ) : (
@@ -139,7 +139,7 @@ function ConversationRow({ sentence, editingId, editData, isPending, deletingId,
                         </div>
                         <button
                             onClick={handlePlayArabic}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
                             title="Play Arabic audio"
                         >
                             {isPlayingArabic ? (
@@ -158,7 +158,7 @@ function ConversationRow({ sentence, editingId, editData, isPending, deletingId,
                             type="text"
                             value={editData?.english || ""}
                             onChange={(e) => setEditData({ ...editData!, english: e.target.value || null })}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                             placeholder="English translation (optional)"
                         />
                         <label className="flex items-center gap-2 text-sm text-slate-700">
@@ -166,7 +166,7 @@ function ConversationRow({ sentence, editingId, editData, isPending, deletingId,
                                 type="checkbox"
                                 checked={editData?.isTitle || false}
                                 onChange={(e) => setEditData({ ...editData!, isTitle: e.target.checked })}
-                                className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                                className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-500"
                             />
                             <span>Mark as title (display in red)</span>
                         </label>
@@ -177,7 +177,7 @@ function ConversationRow({ sentence, editingId, editData, isPending, deletingId,
                         {sentence.english && (
                             <button
                                 onClick={handlePlayEnglish}
-                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                className="p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
                                 title="Play English audio"
                             >
                                 {isPlayingEnglish ? (
@@ -222,7 +222,7 @@ function ConversationRow({ sentence, editingId, editData, isPending, deletingId,
                             <>
                                 <button
                                     onClick={() => onEdit(sentence)}
-                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
                                     title="Edit"
                                 >
                                     <Edit2 className="w-4 h-4" />
@@ -244,7 +244,7 @@ function ConversationRow({ sentence, editingId, editData, isPending, deletingId,
     );
 }
 
-function SortableConversationRow({ sentence, editingId, editData, isPending, deletingId, onEdit, onCancel, onSave, onDeleteClick, onDeleteConfirm, onCancelDelete, setEditData, playingAudio, setPlayingAudio }: {
+function SortableReadingRow({ sentence, editingId, editData, isPending, deletingId, onEdit, onCancel, onSave, onDeleteClick, onDeleteConfirm, onCancelDelete, setEditData, playingAudio, setPlayingAudio }: {
     sentence: ConversationSentence;
     editingId: number | null;
     editData: { arabic: string; english: string | null; order: number; isTitle: boolean } | null;
@@ -322,7 +322,7 @@ function SortableConversationRow({ sentence, editingId, editData, isPending, del
                         type="text"
                         value={editData?.arabic || ""}
                         onChange={(e) => setEditData({ ...editData!, arabic: e.target.value })}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                         dir="rtl"
                     />
                 ) : (
@@ -333,7 +333,7 @@ function SortableConversationRow({ sentence, editingId, editData, isPending, del
                         </div>
                         <button
                             onClick={handlePlayArabic}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
                             title="Play Arabic audio"
                         >
                             {isPlayingArabic ? (
@@ -352,7 +352,7 @@ function SortableConversationRow({ sentence, editingId, editData, isPending, del
                             type="text"
                             value={editData?.english || ""}
                             onChange={(e) => setEditData({ ...editData!, english: e.target.value || null })}
-                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                             placeholder="English translation (optional)"
                         />
                         <label className="flex items-center gap-2 text-sm text-slate-700">
@@ -360,7 +360,7 @@ function SortableConversationRow({ sentence, editingId, editData, isPending, del
                                 type="checkbox"
                                 checked={editData?.isTitle || false}
                                 onChange={(e) => setEditData({ ...editData!, isTitle: e.target.checked })}
-                                className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                                className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-500"
                             />
                             <span>Mark as title (display in red)</span>
                         </label>
@@ -371,7 +371,7 @@ function SortableConversationRow({ sentence, editingId, editData, isPending, del
                         {sentence.english && (
                             <button
                                 onClick={handlePlayEnglish}
-                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                className="p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
                                 title="Play English audio"
                             >
                                 {isPlayingEnglish ? (
@@ -416,7 +416,7 @@ function SortableConversationRow({ sentence, editingId, editData, isPending, del
                             <>
                                 <button
                                     onClick={() => onEdit(sentence)}
-                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
                                     title="Edit"
                                 >
                                     <Edit2 className="w-4 h-4" />
@@ -438,7 +438,7 @@ function SortableConversationRow({ sentence, editingId, editData, isPending, del
     );
 }
 
-export function ConversationManagement({ initialSentences, lessonId, lessonTitle }: { initialSentences: ConversationSentence[]; lessonId: number; lessonTitle: string }) {
+export function ReadingManagement({ initialSentences, lessonId, lessonTitle }: { initialSentences: ConversationSentence[]; lessonId: number; lessonTitle: string }) {
     const [sentences, setSentences] = useState(initialSentences);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editData, setEditData] = useState<{ arabic: string; english: string | null; order: number; isTitle: boolean } | null>(null);
@@ -540,8 +540,8 @@ export function ConversationManagement({ initialSentences, lessonId, lessonTitle
                 setEditingId(null);
                 setEditData(null);
             } catch (error) {
-                console.error("Failed to update conversation sentence:", error);
-                alert("Failed to update conversation sentence. Please try again.");
+                console.error("Failed to update reading sentence:", error);
+                alert("Failed to update reading sentence. Please try again.");
             }
         });
     };
@@ -564,8 +564,8 @@ export function ConversationManagement({ initialSentences, lessonId, lessonTitle
                 setIsCreating(false);
                 setNewSentence({ arabic: "", english: "", order: sentences.length + 1, isTitle: false });
             } catch (error) {
-                console.error("Failed to add conversation sentence:", error);
-                alert("Failed to add conversation sentence. Please try again.");
+                console.error("Failed to add reading sentence:", error);
+                alert("Failed to add reading sentence. Please try again.");
             }
         });
     };
@@ -585,8 +585,8 @@ export function ConversationManagement({ initialSentences, lessonId, lessonTitle
                 setSentences(sentences.filter(s => s.id !== sentenceId));
                 setDeletingId(null);
             } catch (error) {
-                console.error("Failed to delete conversation sentence:", error);
-                alert("Failed to delete conversation sentence. Please try again.");
+                console.error("Failed to delete reading sentence:", error);
+                alert("Failed to delete reading sentence. Please try again.");
                 setDeletingId(null);
             }
         });
@@ -701,7 +701,7 @@ export function ConversationManagement({ initialSentences, lessonId, lessonTitle
             formData.append("existingSentences", JSON.stringify(existingSentences));
 
             setUploadProgress("Sending image to AI for analysis...");
-            const response = await fetch("/api/admin/parse-conversation-image", {
+            const response = await fetch("/api/admin/parse-reading-image", {
                 method: "POST",
                 body: formData,
             });
@@ -765,8 +765,8 @@ export function ConversationManagement({ initialSentences, lessonId, lessonTitle
                     fileInputRef.current.value = "";
                 }
             } catch (error) {
-                console.error("Failed to bulk add conversation sentences:", error);
-                alert("Failed to add conversation sentences. Please try again.");
+                console.error("Failed to bulk add reading sentences:", error);
+                alert("Failed to add reading sentences. Please try again.");
             }
         });
     };
@@ -821,8 +821,8 @@ export function ConversationManagement({ initialSentences, lessonId, lessonTitle
                 try {
                     await updateConversationOrder(newSentences.map((s) => s.id));
                 } catch (error) {
-                    console.error("Failed to update conversation order:", error);
-                    alert("Failed to update conversation order. Please try again.");
+                    console.error("Failed to update reading order:", error);
+                    alert("Failed to update reading order. Please try again.");
                     // Revert on error
                     setSentences(sentences);
                 }
@@ -842,8 +842,8 @@ export function ConversationManagement({ initialSentences, lessonId, lessonTitle
         <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-900">Conversation: {lessonTitle}</h2>
-                    <p className="text-slate-500 mt-1">Manage Arabic conversation sentences with optional English translations</p>
+                    <h2 className="text-2xl font-bold text-slate-900">Reading: {lessonTitle}</h2>
+                    <p className="text-slate-500 mt-1">Manage Arabic reading sentences with optional English translations</p>
                 </div>
                 {!isCreating && !showParsedSentences && (
                     <div className="flex items-center gap-2 flex-wrap">
@@ -857,7 +857,7 @@ export function ConversationManagement({ initialSentences, lessonId, lessonTitle
                         </button>
                         <button
                             onClick={() => setIsCreating(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                         >
                             <Plus className="w-4 h-4" />
                             Add Sentence
@@ -873,13 +873,13 @@ export function ConversationManagement({ initialSentences, lessonId, lessonTitle
                         <div className="flex-1">
                             <h3 className="font-semibold text-purple-900 mb-2">AI Image Parser</h3>
                             <p className="text-sm text-purple-700 mb-4">
-                                Upload an image of a conversation page from an Arabic textbook. The AI will automatically extract Arabic sentences and English translations from the image, using vocabulary from this unit to improve translation accuracy.
+                                Upload an image of a reading page from an Arabic textbook. The AI will automatically extract Arabic sentences and English translations from the image, using vocabulary from this unit to improve translation accuracy.
                             </p>
                             <div className="space-y-2 text-sm text-purple-700 mb-4">
                                 <p className="font-medium">How it works:</p>
                                 <ul className="list-disc list-inside space-y-1 ml-2">
-                                    <li>Upload a clear image of a conversation page with a <strong>two-column layout</strong></li>
-                                    <li>The AI extracts sentences from <strong>both columns</strong> (left and right)</li>
+                                    <li>Upload a clear image of a reading page with sentences displayed sequentially</li>
+                                    <li>The AI extracts sentences in order from top to bottom</li>
                                     <li>English translations are extracted if visible, or generated using unit vocabulary</li>
                                     <li>Duplicate sentences already in this lesson are automatically filtered out</li>
                                     <li>You can review and edit extracted sentences before adding them</li>
@@ -888,7 +888,7 @@ export function ConversationManagement({ initialSentences, lessonId, lessonTitle
                                 <ul className="list-disc list-inside space-y-1 ml-2">
                                     <li>Use clear, high-resolution images</li>
                                     <li>Ensure text is readable and not blurry</li>
-                                    <li>Pages with standard two-column conversation layouts work best</li>
+                                    <li>Pages with sequential sentence layouts work best</li>
                                 </ul>
                             </div>
                         </div>
@@ -913,7 +913,7 @@ export function ConversationManagement({ initialSentences, lessonId, lessonTitle
                                 </p>
                             )}
                             <p className="text-xs text-purple-600 mt-1">
-                                Select an image file containing conversation sentences in a two-column layout.
+                                Select an image file containing reading sentences displayed sequentially.
                             </p>
                         </div>
 
@@ -955,7 +955,7 @@ export function ConversationManagement({ initialSentences, lessonId, lessonTitle
                                 className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none disabled:bg-slate-100 disabled:cursor-not-allowed"
                             />
                             <p className="text-xs text-purple-600 mt-1">
-                                Provide custom instructions to modify how the AI extracts sentences. Leave empty to use the default prompt optimized for two-column conversation pages.
+                                Provide custom instructions to modify how the AI extracts sentences. Leave empty to use the default prompt optimized for sequential reading pages.
                             </p>
                         </div>
 
@@ -1106,7 +1106,7 @@ export function ConversationManagement({ initialSentences, lessonId, lessonTitle
                                 type="text"
                                 value={newSentence.arabic}
                                 onChange={(e) => setNewSentence({ ...newSentence, arabic: e.target.value })}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                                 dir="rtl"
                                 placeholder="Arabic sentence"
                             />
@@ -1117,7 +1117,7 @@ export function ConversationManagement({ initialSentences, lessonId, lessonTitle
                                 type="text"
                                 value={newSentence.english}
                                 onChange={(e) => setNewSentence({ ...newSentence, english: e.target.value })}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                                 placeholder="English translation"
                             />
                         </div>
@@ -1127,7 +1127,7 @@ export function ConversationManagement({ initialSentences, lessonId, lessonTitle
                                     type="checkbox"
                                     checked={newSentence.isTitle}
                                     onChange={(e) => setNewSentence({ ...newSentence, isTitle: e.target.checked })}
-                                    className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                                    className="w-4 h-4 text-purple-600 border-slate-300 rounded focus:ring-purple-500"
                                 />
                                 <span>Mark as title (display in red)</span>
                             </label>
@@ -1154,10 +1154,10 @@ export function ConversationManagement({ initialSentences, lessonId, lessonTitle
 
             {sentences.length === 0 && !isCreating && !showParsedSentences ? (
                 <div className="p-12 text-center">
-                    <p className="text-slate-500 text-lg mb-4">No conversation sentences yet.</p>
+                    <p className="text-slate-500 text-lg mb-4">No reading sentences yet.</p>
                     <button
                         onClick={() => setIsCreating(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Add First Sentence
@@ -1178,7 +1178,7 @@ export function ConversationManagement({ initialSentences, lessonId, lessonTitle
                             <tbody className="bg-white divide-y divide-slate-200">
                                 <SortableContext items={sentences.map(s => s.id)} strategy={verticalListSortingStrategy}>
                                     {sentences.map((sentence) => (
-                                        <SortableConversationRow
+                                        <SortableReadingRow
                                             key={sentence.id}
                                             sentence={sentence}
                                             editingId={editingId}

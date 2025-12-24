@@ -142,6 +142,7 @@ export const conversationSentences = pgTable("conversation_sentences", {
     arabic: text("arabic").notNull(),
     english: text("english"),
     order: integer("order").default(0).notNull(),
+    isTitle: boolean("is_title").default(false).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

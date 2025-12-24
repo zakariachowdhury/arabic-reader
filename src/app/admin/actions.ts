@@ -956,17 +956,17 @@ export async function getConversationSentencesByLesson(lessonId: number) {
     }
 }
 
-export async function addConversationSentence(lessonId: number, data: { arabic: string; english?: string; order?: number }) {
+export async function addConversationSentence(lessonId: number, data: { arabic: string; english?: string; order?: number; isTitle?: boolean }) {
     await requireAdmin();
 
     try {
-        // Verify lesson exists and is conversation type
+        // Verify lesson exists and is conversation or reading type
         const lesson = await getLessonById(lessonId);
         if (!lesson) {
             throw new Error("Lesson not found");
         }
-        if (lesson.type !== "conversation") {
-            throw new Error("Lesson is not a conversation lesson");
+        if (lesson.type !== "conversation" && lesson.type !== "reading") {
+            throw new Error("Lesson is not a conversation or reading lesson");
         }
 
         // Get the max order value for this lesson to set the new sentence's order
@@ -983,9 +983,15 @@ export async function addConversationSentence(lessonId: number, data: { arabic: 
                 arabic: data.arabic.trim(),
                 english: data.english?.trim() || null,
                 order: data.order ?? maxOrder + 1,
+                isTitle: data.isTitle ?? false,
             })
             .returning();
-        revalidatePath(`/admin/lessons/${lessonId}/conversation`);
+        // Reuse the lesson variable from validation above
+        if (lesson.type === "conversation") {
+            revalidatePath(`/admin/lessons/${lessonId}/conversation`);
+        } else if (lesson.type === "reading") {
+            revalidatePath(`/admin/lessons/${lessonId}/reading`);
+        }
         revalidatePath("/admin");
         return newSentence;
     } catch (error) {
@@ -994,11 +1000,11 @@ export async function addConversationSentence(lessonId: number, data: { arabic: 
     }
 }
 
-export async function updateConversationSentence(id: number, data: { arabic?: string; english?: string | null; order?: number }) {
+export async function updateConversationSentence(id: number, data: { arabic?: string; english?: string | null; order?: number; isTitle?: boolean }) {
     await requireAdmin();
 
     try {
-        const updateData: { arabic?: string; english?: string | null; order?: number } = {};
+        const updateData: { arabic?: string; english?: string | null; order?: number; isTitle?: boolean } = {};
         if (data.arabic !== undefined) {
             updateData.arabic = data.arabic.trim();
         }
@@ -1008,6 +1014,9 @@ export async function updateConversationSentence(id: number, data: { arabic?: st
         if (data.order !== undefined) {
             updateData.order = data.order;
         }
+        if (data.isTitle !== undefined) {
+            updateData.isTitle = data.isTitle;
+        }
 
         await db
             .update(conversationSentences)
@@ -1016,7 +1025,14 @@ export async function updateConversationSentence(id: number, data: { arabic?: st
         
         const [sentence] = await db.select({ lessonId: conversationSentences.lessonId }).from(conversationSentences).where(eq(conversationSentences.id, id)).limit(1);
         if (sentence) {
-            revalidatePath(`/admin/lessons/${sentence.lessonId}/conversation`);
+            const lesson = await getLessonById(sentence.lessonId);
+            if (lesson) {
+                if (lesson.type === "conversation") {
+                    revalidatePath(`/admin/lessons/${sentence.lessonId}/conversation`);
+                } else if (lesson.type === "reading") {
+                    revalidatePath(`/admin/lessons/${sentence.lessonId}/reading`);
+                }
+            }
         }
         revalidatePath("/admin");
     } catch (error) {
@@ -1043,7 +1059,14 @@ export async function updateConversationOrder(sentenceIds: number[]) {
         if (sentenceIds.length > 0) {
             const [sentence] = await db.select({ lessonId: conversationSentences.lessonId }).from(conversationSentences).where(eq(conversationSentences.id, sentenceIds[0])).limit(1);
             if (sentence) {
-                revalidatePath(`/admin/lessons/${sentence.lessonId}/conversation`);
+                const lesson = await getLessonById(sentence.lessonId);
+                if (lesson) {
+                    if (lesson.type === "conversation") {
+                        revalidatePath(`/admin/lessons/${sentence.lessonId}/conversation`);
+                    } else if (lesson.type === "reading") {
+                        revalidatePath(`/admin/lessons/${sentence.lessonId}/reading`);
+                    }
+                }
             }
         }
         revalidatePath("/admin");
@@ -1060,7 +1083,14 @@ export async function deleteConversationSentence(id: number) {
         const [sentence] = await db.select({ lessonId: conversationSentences.lessonId }).from(conversationSentences).where(eq(conversationSentences.id, id)).limit(1);
         await db.delete(conversationSentences).where(eq(conversationSentences.id, id));
         if (sentence) {
-            revalidatePath(`/admin/lessons/${sentence.lessonId}/conversation`);
+            const lesson = await getLessonById(sentence.lessonId);
+            if (lesson) {
+                if (lesson.type === "conversation") {
+                    revalidatePath(`/admin/lessons/${sentence.lessonId}/conversation`);
+                } else if (lesson.type === "reading") {
+                    revalidatePath(`/admin/lessons/${sentence.lessonId}/reading`);
+                }
+            }
         }
         revalidatePath("/admin");
     } catch (error) {
@@ -1071,18 +1101,18 @@ export async function deleteConversationSentence(id: number) {
 
 export async function bulkAddConversationSentences(
     lessonId: number,
-    sentences: Array<{ arabic: string; english?: string; order?: number }>
+    sentences: Array<{ arabic: string; english?: string; order?: number; isTitle?: boolean }>
 ) {
     await requireAdmin();
 
     try {
-        // Verify lesson exists and is conversation type
+        // Verify lesson exists and is conversation or reading type
         const lesson = await getLessonById(lessonId);
         if (!lesson) {
             throw new Error("Lesson not found");
         }
-        if (lesson.type !== "conversation") {
-            throw new Error("Lesson is not a conversation lesson");
+        if (lesson.type !== "conversation" && lesson.type !== "reading") {
+            throw new Error("Lesson is not a conversation or reading lesson");
         }
 
         if (!sentences || sentences.length === 0) {
@@ -1105,11 +1135,17 @@ export async function bulkAddConversationSentences(
                     arabic: sentence.arabic.trim(),
                     english: sentence.english?.trim() || null,
                     order: sentence.order ?? maxOrder + 1 + index,
+                    isTitle: sentence.isTitle ?? false,
                 }))
             )
             .returning();
 
-        revalidatePath(`/admin/lessons/${lessonId}/conversation`);
+        // Reuse the lesson variable from validation above
+        if (lesson.type === "conversation") {
+            revalidatePath(`/admin/lessons/${lessonId}/conversation`);
+        } else if (lesson.type === "reading") {
+            revalidatePath(`/admin/lessons/${lessonId}/reading`);
+        }
         revalidatePath("/admin");
         return newSentences;
     } catch (error) {
