@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { user, todos, groups, settings, books, units, lessons, vocabularyWords, userProgress } from "@/db/schema";
+import { user, todos, groups, settings, books, units, lessons, vocabularyWords, conversationSentences, userProgress } from "@/db/schema";
 import { eq, desc, asc, and, sql, gte, lte, count, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin";
@@ -937,6 +937,184 @@ export async function bulkAddVocabularyWords(
     } catch (error) {
         console.error("Failed to bulk add vocabulary words:", error);
         throw new Error("Failed to bulk add vocabulary words");
+    }
+}
+
+// Conversation Management Actions
+export async function getConversationSentencesByLesson(lessonId: number) {
+    await requireAdmin();
+
+    try {
+        return await db
+            .select()
+            .from(conversationSentences)
+            .where(eq(conversationSentences.lessonId, lessonId))
+            .orderBy(asc(conversationSentences.order), asc(conversationSentences.id));
+    } catch (error) {
+        console.error("Failed to fetch conversation sentences:", error);
+        throw new Error("Failed to fetch conversation sentences");
+    }
+}
+
+export async function addConversationSentence(lessonId: number, data: { arabic: string; english?: string; order?: number }) {
+    await requireAdmin();
+
+    try {
+        // Verify lesson exists and is conversation type
+        const lesson = await getLessonById(lessonId);
+        if (!lesson) {
+            throw new Error("Lesson not found");
+        }
+        if (lesson.type !== "conversation") {
+            throw new Error("Lesson is not a conversation lesson");
+        }
+
+        // Get the max order value for this lesson to set the new sentence's order
+        const maxOrderResult = await db
+            .select({ maxOrder: sql<number>`COALESCE(MAX(${conversationSentences.order}), -1)` })
+            .from(conversationSentences)
+            .where(eq(conversationSentences.lessonId, lessonId));
+        const maxOrder = maxOrderResult[0]?.maxOrder ?? -1;
+
+        const [newSentence] = await db
+            .insert(conversationSentences)
+            .values({
+                lessonId,
+                arabic: data.arabic.trim(),
+                english: data.english?.trim() || null,
+                order: data.order ?? maxOrder + 1,
+            })
+            .returning();
+        revalidatePath(`/admin/lessons/${lessonId}/conversation`);
+        revalidatePath("/admin");
+        return newSentence;
+    } catch (error) {
+        console.error("Failed to add conversation sentence:", error);
+        throw new Error("Failed to add conversation sentence");
+    }
+}
+
+export async function updateConversationSentence(id: number, data: { arabic?: string; english?: string | null; order?: number }) {
+    await requireAdmin();
+
+    try {
+        const updateData: { arabic?: string; english?: string | null; order?: number } = {};
+        if (data.arabic !== undefined) {
+            updateData.arabic = data.arabic.trim();
+        }
+        if (data.english !== undefined) {
+            updateData.english = data.english?.trim() || null;
+        }
+        if (data.order !== undefined) {
+            updateData.order = data.order;
+        }
+
+        await db
+            .update(conversationSentences)
+            .set(updateData)
+            .where(eq(conversationSentences.id, id));
+        
+        const [sentence] = await db.select({ lessonId: conversationSentences.lessonId }).from(conversationSentences).where(eq(conversationSentences.id, id)).limit(1);
+        if (sentence) {
+            revalidatePath(`/admin/lessons/${sentence.lessonId}/conversation`);
+        }
+        revalidatePath("/admin");
+    } catch (error) {
+        console.error("Failed to update conversation sentence:", error);
+        throw new Error("Failed to update conversation sentence");
+    }
+}
+
+export async function updateConversationOrder(sentenceIds: number[]) {
+    await requireAdmin();
+
+    try {
+        // Update order for all conversation sentences in the provided order
+        // Using Promise.all since Neon HTTP may not support transactions
+        await Promise.all(
+            sentenceIds.map((sentenceId, index) =>
+                db
+                    .update(conversationSentences)
+                    .set({ order: index })
+                    .where(eq(conversationSentences.id, sentenceId))
+            )
+        );
+        
+        if (sentenceIds.length > 0) {
+            const [sentence] = await db.select({ lessonId: conversationSentences.lessonId }).from(conversationSentences).where(eq(conversationSentences.id, sentenceIds[0])).limit(1);
+            if (sentence) {
+                revalidatePath(`/admin/lessons/${sentence.lessonId}/conversation`);
+            }
+        }
+        revalidatePath("/admin");
+    } catch (error) {
+        console.error("Failed to update conversation order:", error);
+        throw new Error("Failed to update conversation order");
+    }
+}
+
+export async function deleteConversationSentence(id: number) {
+    await requireAdmin();
+
+    try {
+        const [sentence] = await db.select({ lessonId: conversationSentences.lessonId }).from(conversationSentences).where(eq(conversationSentences.id, id)).limit(1);
+        await db.delete(conversationSentences).where(eq(conversationSentences.id, id));
+        if (sentence) {
+            revalidatePath(`/admin/lessons/${sentence.lessonId}/conversation`);
+        }
+        revalidatePath("/admin");
+    } catch (error) {
+        console.error("Failed to delete conversation sentence:", error);
+        throw new Error("Failed to delete conversation sentence");
+    }
+}
+
+export async function bulkAddConversationSentences(
+    lessonId: number,
+    sentences: Array<{ arabic: string; english?: string; order?: number }>
+) {
+    await requireAdmin();
+
+    try {
+        // Verify lesson exists and is conversation type
+        const lesson = await getLessonById(lessonId);
+        if (!lesson) {
+            throw new Error("Lesson not found");
+        }
+        if (lesson.type !== "conversation") {
+            throw new Error("Lesson is not a conversation lesson");
+        }
+
+        if (!sentences || sentences.length === 0) {
+            throw new Error("No sentences provided");
+        }
+
+        // Get current max order for this lesson
+        const existingSentences = await db
+            .select({ maxOrder: sql<number>`COALESCE(MAX(${conversationSentences.order}), -1)` })
+            .from(conversationSentences)
+            .where(eq(conversationSentences.lessonId, lessonId));
+        const maxOrder = existingSentences[0]?.maxOrder ?? -1;
+
+        // Insert all sentences with proper ordering
+        const newSentences = await db
+            .insert(conversationSentences)
+            .values(
+                sentences.map((sentence, index) => ({
+                    lessonId,
+                    arabic: sentence.arabic.trim(),
+                    english: sentence.english?.trim() || null,
+                    order: sentence.order ?? maxOrder + 1 + index,
+                }))
+            )
+            .returning();
+
+        revalidatePath(`/admin/lessons/${lessonId}/conversation`);
+        revalidatePath("/admin");
+        return newSentences;
+    } catch (error) {
+        console.error("Failed to bulk add conversation sentences:", error);
+        throw new Error("Failed to bulk add conversation sentences");
     }
 }
 

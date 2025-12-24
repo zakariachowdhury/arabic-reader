@@ -80,48 +80,58 @@ export default async function UnitDetailPage({ params }: { params: Promise<{ id:
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {lessonsWithProgress.map((lesson) => (
-                            <Link
-                                key={lesson.id}
-                                href={lesson.type === "vocabulary" ? `/lessons/${lesson.id}/vocabulary` : `#`}
-                                className={`bg-white rounded-2xl shadow-lg border border-slate-100 p-8 hover:shadow-xl transition-all ${
-                                    lesson.type === "vocabulary" 
-                                        ? "hover:border-blue-200 cursor-pointer" 
-                                        : "opacity-60 cursor-not-allowed"
-                                } group`}
-                            >
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className={`p-4 rounded-xl transition-colors ${
-                                        lesson.type === "vocabulary" 
-                                            ? "bg-purple-100 group-hover:bg-purple-200" 
-                                            : "bg-slate-100"
-                                    }`}>
-                                        <GraduationCap className={`w-8 h-8 ${
-                                            lesson.type === "vocabulary" ? "text-purple-600" : "text-slate-400"
-                                        }`} />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <h2 className="text-xl font-bold text-slate-900">{lesson.title}</h2>
-                                                <p className="text-sm text-slate-500 capitalize">{lesson.type}</p>
+                        {lessonsWithProgress.map((lesson) => {
+                            const getLessonUrl = () => {
+                                if (lesson.type === "vocabulary") return `/lessons/${lesson.id}/vocabulary`;
+                                if (lesson.type === "conversation") return `/lessons/${lesson.id}/conversation`;
+                                return "#";
+                            };
+                            
+                            const isClickable = lesson.type === "vocabulary" || lesson.type === "conversation";
+                            
+                            return (
+                                <Link
+                                    key={lesson.id}
+                                    href={getLessonUrl()}
+                                    className={`bg-white rounded-2xl shadow-lg border border-slate-100 p-8 hover:shadow-xl transition-all ${
+                                        isClickable
+                                            ? "hover:border-blue-200 cursor-pointer" 
+                                            : "opacity-60 cursor-not-allowed"
+                                    } group`}
+                                >
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className={`p-4 rounded-xl transition-colors ${
+                                            isClickable
+                                                ? "bg-purple-100 group-hover:bg-purple-200" 
+                                                : "bg-slate-100"
+                                        }`}>
+                                            <GraduationCap className={`w-8 h-8 ${
+                                                isClickable ? "text-purple-600" : "text-slate-400"
+                                            }`} />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <h2 className="text-xl font-bold text-slate-900">{lesson.title}</h2>
+                                                    <p className="text-sm text-slate-500 capitalize">{lesson.type}</p>
+                                                </div>
+                                                {lesson.progress && lesson.progress.totalWords > 0 && (
+                                                    <ProgressBadge progress={lesson.progress} />
+                                                )}
                                             </div>
-                                            {lesson.progress && lesson.progress.totalWords > 0 && (
-                                                <ProgressBadge progress={lesson.progress} />
-                                            )}
                                         </div>
                                     </div>
-                                </div>
-                                {lesson.type !== "vocabulary" && (
-                                    <p className="text-xs text-slate-400 mt-2">Coming soon</p>
-                                )}
-                                {lesson.progress && lesson.progress.totalWords > 0 && (
-                                    <div className="mt-4">
-                                        <ProgressBar progress={lesson.progress} size="sm" />
-                                    </div>
-                                )}
-                            </Link>
-                        ))}
+                                    {!isClickable && (
+                                        <p className="text-xs text-slate-400 mt-2">Coming soon</p>
+                                    )}
+                                    {lesson.progress && lesson.progress.totalWords > 0 && (
+                                        <div className="mt-4">
+                                            <ProgressBar progress={lesson.progress} size="sm" />
+                                        </div>
+                                    )}
+                                </Link>
+                            );
+                        })}
                     </div>
                 )}
             </div>

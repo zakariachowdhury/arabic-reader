@@ -101,6 +101,7 @@ function SortableLessonRow({ lesson, editingId, editData, isPending, deletingId,
                         className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                         <option value="vocabulary">Vocabulary</option>
+                        <option value="conversation">Conversation</option>
                         <option value="reading">Reading</option>
                         <option value="grammar">Grammar</option>
                         <option value="exercise">Exercise</option>
@@ -177,6 +178,15 @@ function SortableLessonRow({ lesson, editingId, editData, isPending, deletingId,
                                         href={`/admin/lessons/${lesson.id}/vocabulary`}
                                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                         title="Manage Vocabulary"
+                                    >
+                                        <BookOpen className="w-4 h-4" />
+                                    </Link>
+                                )}
+                                {lesson.type === "conversation" && (
+                                    <Link
+                                        href={`/admin/lessons/${lesson.id}/conversation`}
+                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                        title="Manage Conversation"
                                     >
                                         <BookOpen className="w-4 h-4" />
                                     </Link>

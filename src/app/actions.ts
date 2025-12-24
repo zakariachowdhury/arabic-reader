@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { todos, verification, user, groups, settings, books, units, lessons, vocabularyWords, userProgress } from "@/db/schema";
+import { todos, verification, user, groups, settings, books, units, lessons, vocabularyWords, conversationSentences, userProgress } from "@/db/schema";
 import { eq, asc, and, inArray, sql, gte, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
@@ -2454,6 +2454,38 @@ export async function getVocabularyWordsByLesson(lessonId: number) {
             .orderBy(asc(vocabularyWords.order), asc(vocabularyWords.id));
     } catch (error) {
         console.error("Failed to fetch vocabulary words:", error);
+        return [];
+    }
+}
+
+export async function getConversationSentencesByLesson(lessonId: number) {
+    const session = await getSession();
+    if (!session) return [];
+
+    try {
+        // First verify that the lesson, unit, and book are all enabled
+        const [lesson] = await db
+            .select()
+            .from(lessons)
+            .innerJoin(units, eq(lessons.unitId, units.id))
+            .innerJoin(books, eq(units.bookId, books.id))
+            .where(and(
+                eq(lessons.id, lessonId),
+                eq(lessons.enabled, true),
+                eq(units.enabled, true),
+                eq(books.enabled, true)
+            ))
+            .limit(1);
+        
+        if (!lesson) return [];
+
+        return await db
+            .select()
+            .from(conversationSentences)
+            .where(eq(conversationSentences.lessonId, lessonId))
+            .orderBy(asc(conversationSentences.order), asc(conversationSentences.id));
+    } catch (error) {
+        console.error("Failed to fetch conversation sentences:", error);
         return [];
     }
 }

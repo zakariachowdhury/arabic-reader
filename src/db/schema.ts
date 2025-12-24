@@ -134,6 +134,17 @@ export const vocabularyWords = pgTable("vocabulary_words", {
     createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const conversationSentences = pgTable("conversation_sentences", {
+    id: serial("id").primaryKey(),
+    lessonId: integer("lesson_id")
+        .notNull()
+        .references(() => lessons.id, { onDelete: "cascade" }),
+    arabic: text("arabic").notNull(),
+    english: text("english"),
+    order: integer("order").default(0).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const userProgress = pgTable("user_progress", {
     id: serial("id").primaryKey(),
     userId: text("user_id")
@@ -167,5 +178,7 @@ export type Lesson = typeof lessons.$inferSelect;
 export type NewLesson = typeof lessons.$inferInsert;
 export type VocabularyWord = typeof vocabularyWords.$inferSelect;
 export type NewVocabularyWord = typeof vocabularyWords.$inferInsert;
+export type ConversationSentence = typeof conversationSentences.$inferSelect;
+export type NewConversationSentence = typeof conversationSentences.$inferInsert;
 export type UserProgress = typeof userProgress.$inferSelect;
 export type NewUserProgress = typeof userProgress.$inferInsert;
